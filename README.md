@@ -1,45 +1,73 @@
-# P2HACKS2025 アピールシート
+# React + TypeScript + Vite
 
-## プロダクト名
-ここにはプロダクト名を書きます。ロゴなどがあれば、それを貼ってもよいです。読み仮名もあると親切です。
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## コンセプト
-ここにはプロダクトのコンセプトを書きます。プロダクトの本質的な考え方、発想などを一文か二文で簡潔にまとめるとよいです。
+Currently, two official plugins are available:
 
-## 対象ユーザ
-ここにはプロダクトがターゲットにしているユーザーを書きます。
-対象としているユーザーの悩みは何でしょうか？どのようなことを楽しみに生きている人でしょうか？潜在的に抱えている問題は？いろいろと考えてみるとよいでしょう。
-属性を具体的に書いてもよいです。
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## 利用の流れ
-プロダクトを起動したり、ランディングした時やその後の流れを書きます。
-手順書のようなものではなくてもよいですが、読んだらプロダクトの使い方がわかるものがよいです。
-必要に応じて、プロダクトを知るまでの流れも書いてよいでしょう。
+## React Compiler
 
-## 推しポイント
-ここにはプロダクトの推しポイントを書きます。
-なぜそのプロダクトはほかのプロダクトより優れているのでしょうか？他のプロダクトにはない特徴は何でしょうか？ほかでもないそのプロダクトによってユーザーはどのような嬉しさを得ますか？
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## スクリーンショット(任意)
-ここにはスクリーンショットを貼ります。そのままでもよいですし、画像を編集しておしゃれにしてもよいです(全くの捏造というのはしないでください)。GitHubのエディタに画像をドロップ&ドロップすると張り付きます。
+## Expanding the ESLint configuration
 
-## 開発体制
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-### 役割分担
-ここには開発体制を書きます。誰が何をしましたか？役職名を付けるか、担当した領域（バックエンド、フロントエンド、デザイン、発表資料作成、など）を書いてください。一人が複数を兼任する場合もあるでしょう。
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-### 開発における工夫した点
-開発における工夫した点を書いてください。チーム開発における工夫、技術的な工夫、スケジュール管理の工夫など、どのようなことでもよいです。
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-## 開発技術
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
-### 利用したプログラミング言語
-- ここには利用したプログラミング言語を書きます。
-- ハイフン+スペースを最初に書くと箇条書きになります。
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-### 利用したフレームワーク・ライブラリ
-- ここには利用したフレームワークやライブラリを書きます。
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-### その他開発に使用したツール・サービス
-- ここにはその他開発に使用したツールやサービスを書きます。
-- 例: GitHub, Figma, Canva, ChatGPT など
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
