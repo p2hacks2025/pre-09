@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import type p5 from 'p5';
 import { useP5, type Sketch } from '../../hooks/useP5';
 import type { Star, ConstellationLine, DiaryEntry } from '../../types';
+import { CANVAS_CONSTANTS } from '../../types';
 import './ConstellationCreator.css';
 
 interface ConstellationCreatorProps {
@@ -68,26 +69,22 @@ export function ConstellationCreator({
   entries,
   onComplete,
   onCancel,
-  width = 400,
-  height = 400,
+  width = CANVAS_CONSTANTS.CONSTELLATION_WIDTH,
+  height = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT,
 }: ConstellationCreatorProps) {
   const [constellationName, setConstellationName] = useState('');
   const [isAnimating, setIsAnimating] = useState(true);
 
-  // エントリから星データを生成（キャンバス内に収まるように配置）
+  // エントリから星データを生成（CANVAS_CONSTANTSを使用して座標系を統一）
   const stars: Star[] = useMemo(() => {
-    const padding = 60;
-    const availableWidth = width - padding * 2;
-    const availableHeight = height - padding * 2;
-
-    return entries.map((entry, index) => ({
+    return entries.map((entry) => ({
       entryId: entry.id!,
-      x: entry.starPosition.x * availableWidth + padding,
-      y: entry.starPosition.y * availableHeight + padding,
+      x: entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH + CANVAS_CONSTANTS.PADDING,
+      y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING,
       brightness: 200,
       size: 10,
     }));
-  }, [entries, width, height]);
+  }, [entries]);
 
   // 最近傍法で線を自動生成
   const lines = useMemo(() => generateNearestNeighborLines(stars), [stars]);

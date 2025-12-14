@@ -211,12 +211,19 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
       
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <label style={{ 
-          display: 'block', padding: '10px', border: '2px dashed #ccc', 
-          cursor: 'pointer', borderRadius: '8px', minHeight: '200px',
-          background: '#fafafa', position: 'relative'
+          display: 'block', 
+          width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
+          height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
+          margin: '0 auto',
+          border: '2px dashed #ccc', 
+          cursor: 'pointer', 
+          borderRadius: '8px',
+          background: '#fafafa', 
+          position: 'relative',
+          overflow: 'hidden'
         }}>
           {previewUrl ? (
-            <img src={previewUrl} style={{ maxWidth: '100%', display: 'block', margin: '0 auto' }} alt="Preview" />
+            <img src={previewUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="Preview" />
           ) : (
              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>
               📷 タップして写真を選ぶ

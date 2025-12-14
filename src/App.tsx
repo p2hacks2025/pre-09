@@ -71,21 +71,42 @@ function App() {
     setUnassignedEntries(unassigned);
     setConstellations(allConstellations);
 
-    // エントリIDからインデックスへのマッピングを作成
-    const entryIdToIndex = new Map<number, number>();
+    // エントリIDから星座グループインデックスへのマッピングを作成
+    const entryIdToGroupIndex = new Map<number, number>();
+    
+    // 完成した星座に属するエントリをマッピング
+    allConstellations.forEach((constellation, constellationIndex) => {
+      constellation.entryIds.forEach((entryId) => {
+        entryIdToGroupIndex.set(entryId, constellationIndex);
+      });
+    });
+    
+    // 未割り当てエントリは最後のグループ（作成中の星座）に配置
+    const unassignedGroupIndex = allConstellations.length;
+    unassigned.forEach((entry) => {
+      if (entry.id) {
+        entryIdToGroupIndex.set(entry.id, unassignedGroupIndex);
+      }
+    });
+
+    // エントリIDからグローバルインデックスへのマッピング（線描画用）
+    const entryIdToGlobalIndex = new Map<number, number>();
     allEntries.forEach((entry, index) => {
-      if (entry.id) entryIdToIndex.set(entry.id, index);
+      if (entry.id) entryIdToGlobalIndex.set(entry.id, index);
     });
 
     // 既存のエントリから星データを生成
-    const stars: Star[] = allEntries.map((entry, index) => ({
-      entryId: entry.id!,
-      // 星座ごとにX座標をオフセット（7日分ごとにグループ化）
-      x: (entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH) + Math.floor(index / 7) * CONSTELLATION_WIDTH + CANVAS_CONSTANTS.PADDING,
-      y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING,
-      brightness: 200,
-      size: 8,
-    }));
+    const stars: Star[] = allEntries.map((entry) => {
+      const groupIndex = entryIdToGroupIndex.get(entry.id!) ?? unassignedGroupIndex;
+      return {
+        entryId: entry.id!,
+        // 星座グループに基づいてX座標をオフセット
+        x: (entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH) + groupIndex * CONSTELLATION_WIDTH + CANVAS_CONSTANTS.PADDING,
+        y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING,
+        brightness: 200,
+        size: 8,
+      };
+    });
     setCanvasStars(stars);
 
     // 星座の線データを生成（星座ごとのローカルインデックスをグローバルインデックスに変換）
@@ -94,7 +115,7 @@ function App() {
       if (!constellation.lines) return;
       
       // この星座のエントリIDをグローバルインデックスに変換
-      const globalIndices = constellation.entryIds.map(id => entryIdToIndex.get(id) ?? -1);
+      const globalIndices = constellation.entryIds.map(id => entryIdToGlobalIndex.get(id) ?? -1);
       
       constellation.lines.forEach((line) => {
         const fromGlobal = globalIndices[line.fromIndex];
@@ -338,8 +359,8 @@ function App() {
         entries={entriesToUse}
         onComplete={handleConstellationComplete}
         onCancel={() => setView('home')}
-        width={Math.min(window.innerWidth - 32, 400)}
-        height={Math.min(window.innerHeight - 300, 400)}
+        width={CANVAS_CONSTANTS.CONSTELLATION_WIDTH}
+        height={CANVAS_CONSTANTS.CONSTELLATION_HEIGHT}
       />
     );
   };
