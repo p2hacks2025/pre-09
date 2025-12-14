@@ -2,6 +2,29 @@
 // 星座日記 型定義
 // ============================================
 
+// ============================================
+// 共通定数（座標系を統一するため）
+// ============================================
+
+/**
+ * 星座キャンバスと写真クロッピングで共通のサイズ定数
+ * これにより、星座描画領域・クロッピング枠・星タップ領域が一致する
+ */
+export const CANVAS_CONSTANTS = {
+  /** 星座1つあたりの全体幅 */
+  CONSTELLATION_WIDTH: 400,
+  /** 星座1つあたりの全体高さ（PADDING * 2 + STAR_AREA_HEIGHT） */
+  CONSTELLATION_HEIGHT: 300,
+  /** 星描画領域のパディング */
+  PADDING: 50,
+  /** 星描画領域の幅（写真と一致） */
+  STAR_AREA_WIDTH: 300,
+  /** 星描画領域の高さ（写真と一致）- 3:4比率 */
+  STAR_AREA_HEIGHT: 400,
+  /** クロッピングのアスペクト比 */
+  CROP_ASPECT: 3 / 4,
+} as const;
+
 /**
  * 星の位置情報（写真上の相対座標）
  * x, y は 0〜1 の範囲で正規化された値
@@ -37,6 +60,8 @@ export interface Constellation {
   name: string;
   /** 紐づく DiaryEntry の ID（7件） */
   entryIds: number[];
+  /** 星をつなぐ線の配列 */
+  lines: ConstellationLine[];
   /** 作成日時 */
   createdAt: Date;
 }

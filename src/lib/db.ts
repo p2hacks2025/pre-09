@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { DiaryEntry, Constellation, StarPosition } from '../types';
+import type { DiaryEntry, Constellation, StarPosition, ConstellationLine } from '../types';
 
 // ============================================
 // Dexie データベースクラス
@@ -117,11 +117,13 @@ export async function deleteDiaryEntry(id: number): Promise<void> {
  */
 export async function createConstellation(
   name: string,
-  entryIds: number[]
+  entryIds: number[],
+  lines: ConstellationLine[]
 ): Promise<number> {
   return await db.constellations.add({
     name,
     entryIds,
+    lines,
     createdAt: new Date(),
   });
 }
@@ -171,4 +173,136 @@ export async function updateConstellationName(
  */
 export async function deleteConstellation(id: number): Promise<void> {
   await db.constellations.delete(id);
+}
+
+// ============================================
+// デバッグ・テスト用関数
+// ============================================
+
+/**
+ * 全データを削除してリセットする
+ */
+export async function resetAllData(): Promise<void> {
+  await db.diaryEntries.clear();
+  await db.constellations.clear();
+  console.log('✅ All data has been reset');
+}
+
+/**
+ * テスト用の仮データを生成する（3つの星座 + 未割り当て星）
+ */
+export async function createTestData(): Promise<void> {
+  // まずリセット
+  await resetAllData();
+
+  // ダミーの写真Blob（1x1ピクセルの透明PNG）
+  const dummyBlob = new Blob(
+    [new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,196,137,0,0,0,10,73,68,65,84,120,156,99,0,1,0,0,5,0,1,13,10,45,180,0,0,0,0,73,69,78,68,174,66,96,130])],
+    { type: 'image/png' }
+  );
+
+  // 星座1: 「希望の星」（7つの星）
+  const constellation1Entries: number[] = [];
+  const positions1 = [
+    { x: 0.2, y: 0.3 },
+    { x: 0.4, y: 0.15 },
+    { x: 0.6, y: 0.25 },
+    { x: 0.8, y: 0.2 },
+    { x: 0.3, y: 0.6 },
+    { x: 0.5, y: 0.7 },
+    { x: 0.7, y: 0.55 },
+  ];
+  for (let i = 0; i < 7; i++) {
+    const id = await addDiaryEntry(
+      `2025-12-0${i + 1}`,
+      dummyBlob,
+      `テストメモ 星座1-${i + 1}`,
+      positions1[i]
+    );
+    constellation1Entries.push(id);
+  }
+  await createConstellation('希望の星', constellation1Entries, [
+    { fromIndex: 0, toIndex: 1 },
+    { fromIndex: 1, toIndex: 2 },
+    { fromIndex: 2, toIndex: 3 },
+    { fromIndex: 1, toIndex: 4 },
+    { fromIndex: 4, toIndex: 5 },
+    { fromIndex: 5, toIndex: 6 },
+  ]);
+
+  // 星座2: 「夢の軌跡」（7つの星）
+  const constellation2Entries: number[] = [];
+  const positions2 = [
+    { x: 0.15, y: 0.2 },
+    { x: 0.35, y: 0.35 },
+    { x: 0.5, y: 0.15 },
+    { x: 0.65, y: 0.4 },
+    { x: 0.8, y: 0.25 },
+    { x: 0.4, y: 0.65 },
+    { x: 0.6, y: 0.75 },
+  ];
+  for (let i = 0; i < 7; i++) {
+    const id = await addDiaryEntry(
+      `2025-12-0${i + 8}`,
+      dummyBlob,
+      `テストメモ 星座2-${i + 1}`,
+      positions2[i]
+    );
+    constellation2Entries.push(id);
+  }
+  await createConstellation('夢の軌跡', constellation2Entries, [
+    { fromIndex: 0, toIndex: 1 },
+    { fromIndex: 1, toIndex: 2 },
+    { fromIndex: 2, toIndex: 3 },
+    { fromIndex: 3, toIndex: 4 },
+    { fromIndex: 1, toIndex: 5 },
+    { fromIndex: 5, toIndex: 6 },
+  ]);
+
+  // 星座3: 「キラキラ」（7つの星）
+  const constellation3Entries: number[] = [];
+  const positions3 = [
+    { x: 0.5, y: 0.1 },
+    { x: 0.3, y: 0.3 },
+    { x: 0.7, y: 0.3 },
+    { x: 0.2, y: 0.5 },
+    { x: 0.8, y: 0.5 },
+    { x: 0.4, y: 0.7 },
+    { x: 0.6, y: 0.7 },
+  ];
+  for (let i = 0; i < 7; i++) {
+    const id = await addDiaryEntry(
+      `2025-12-${15 + i}`,
+      dummyBlob,
+      `テストメモ 星座3-${i + 1}`,
+      positions3[i]
+    );
+    constellation3Entries.push(id);
+  }
+  await createConstellation('キラキラ', constellation3Entries, [
+    { fromIndex: 0, toIndex: 1 },
+    { fromIndex: 0, toIndex: 2 },
+    { fromIndex: 1, toIndex: 3 },
+    { fromIndex: 2, toIndex: 4 },
+    { fromIndex: 1, toIndex: 5 },
+    { fromIndex: 2, toIndex: 6 },
+  ]);
+
+  // 未割り当ての星（4つ）
+  const unassignedPositions = [
+    { x: 0.25, y: 0.4 },
+    { x: 0.5, y: 0.3 },
+    { x: 0.75, y: 0.45 },
+    { x: 0.4, y: 0.6 },
+  ];
+  for (let i = 0; i < 4; i++) {
+    await addDiaryEntry(
+      `2025-12-${22 + i}`,
+      dummyBlob,
+      `未割り当てテストメモ ${i + 1}`,
+      unassignedPositions[i]
+    );
+  }
+
+  console.log('✅ Test data created: 3 constellations + 4 unassigned entries');
 }

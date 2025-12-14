@@ -1,4 +1,5 @@
 import { useState, useRef, type MouseEvent } from 'react';
+import { CANVAS_CONSTANTS } from '../../types';
 
 // 👇 ここが重要！ note（メモ）を受け取るのをやめました。
 //    保存処理もここには書きません。
@@ -10,14 +11,18 @@ type Props = {
 
 export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
   const [starPos, setStarPos] = useState<{x: number, y: number} | null>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = (e: MouseEvent<HTMLImageElement>) => {
-    if (!imgRef.current) return;
-    const rect = imgRef.current.getBoundingClientRect();
+  const handleClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
-    setStarPos({ x, y });
+    // 0〜1の範囲にクランプ
+    setStarPos({ 
+      x: Math.max(0, Math.min(1, x)), 
+      y: Math.max(0, Math.min(1, y)) 
+    });
   };
 
   const handleConfirm = () => {
@@ -27,13 +32,33 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
   };
 
   return (
-    <div style={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', padding: '20px' }}>
       <h2 style={{fontSize: '1.2rem', margin: '10px 0'}}>🌟 一番明るい星をタップ！</h2>
       
-      <div style={{ position: 'relative', display: 'inline-block', margin: '0 auto' }}>
+      {/* 星座描画領域と同じサイズの固定コンテナ */}
+      <div style={{ 
+        position: 'relative', 
+        width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
+        height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
+        margin: '0 auto',
+        cursor: 'crosshair',
+        overflow: 'hidden',
+        borderRadius: '8px',
+        border: '2px solid #333'
+      }}
+        ref={containerRef}
+        onClick={handleClick}
+      >
         <img 
-          ref={imgRef} src={photoUrl} onClick={handleClick} alt="Selected"
-          style={{ maxWidth: '100%', borderRadius: '8px', cursor: 'crosshair', display: 'block' }} 
+          src={photoUrl} 
+          alt="Selected"
+          style={{ 
+            width: '100%', 
+            height: '100%', 
+            objectFit: 'cover',
+            display: 'block',
+            pointerEvents: 'none'
+          }} 
         />
         {starPos && (
           <div style={{

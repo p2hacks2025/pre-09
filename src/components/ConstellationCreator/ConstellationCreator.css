@@ -1,0 +1,122 @@
+/* ============================================
+   星座作成画面
+   ============================================ */
+
+.constellation-creator {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(10, 10, 32, 0.98);
+}
+
+.creator-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.creator-header h1 {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #fff;
+}
+
+.creator-canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  min-height: 0;
+}
+
+.creator-canvas {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 
+    0 0 30px rgba(100, 150, 255, 0.2),
+    0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.creator-canvas canvas {
+  display: block;
+}
+
+.creator-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 32, 1) 0%,
+    rgba(10, 10, 32, 0.9) 100%
+  );
+}
+
+.creator-hint {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.creator-animating {
+  font-size: 1rem;
+  color: rgba(150, 200, 255, 0.9);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.constellation-name-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(150, 200, 255, 0.3);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 1.1rem;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.constellation-name-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.constellation-name-input:focus {
+  outline: none;
+  border-color: rgba(150, 200, 255, 0.6);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 20px rgba(100, 150, 255, 0.2);
+}
+
+.creator-controls .btn {
+  width: 100%;
+  max-width: 300px;
+}
+
+/* ボタン共通（App.cssと統合されている場合は不要） */
+.btn-back {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.btn-back:hover {
+  color: #ffffff;
+}

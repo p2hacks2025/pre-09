@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, type ChangeEvent } from 'react';
+import { useState, useCallback, useEffect, useRef, type ChangeEvent } from 'react';
 import StarPlacer from '../StarPlacer/StarPlacer';
 import Cropper, { type Area } from 'react-easy-crop';
+import { CANVAS_CONSTANTS } from '../../types';
 
 
 // TypeScriptに「これはReactコンポーネントとして扱ってOK」と明示的に伝えます。
@@ -58,10 +59,11 @@ async function getCroppedImg(
 // =================================================================
 
 type Props = {
-  onComplete: () => void;
+  onComplete: (data: { photoUrl: string; memo: string; starPosition: { x: number; y: number } }) => void;
+  onCancel: () => void;
 };
 
-export default function DiaryEntry({ onComplete }: Props) {
+export default function DiaryEntry({ onComplete, onCancel }: Props) {
   const [note, setNote] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [step, setStep] = useState<'input' | 'cropping' | 'star'>('input');
@@ -71,10 +73,28 @@ export default function DiaryEntry({ onComplete }: Props) {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
+  // Object URLを追跡してクリーンアップ
+  const objectUrlsRef = useRef<string[]>([]);
+
+  // コンポーネントのアンマウント時にすべてのObject URLを解放
+  useEffect(() => {
+    return () => {
+      objectUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      objectUrlsRef.current = [];
+    };
+  }, []);
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // 古いimageSrcがあれば解放
+      if (imageSrc) {
+        URL.revokeObjectURL(imageSrc);
+      }
       const imageDataUrl = URL.createObjectURL(file);
+      objectUrlsRef.current.push(imageDataUrl);
       setImageSrc(imageDataUrl);
       setStep('cropping');
     }
@@ -87,7 +107,12 @@ export default function DiaryEntry({ onComplete }: Props) {
   const handleCropConfirm = async () => {
     if (imageSrc && croppedAreaPixels) {
       try {
+        // 古いpreviewUrlがあれば解放
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
         const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
+        objectUrlsRef.current.push(croppedImage);
         setPreviewUrl(croppedImage);
         setStep('input');
       } catch (e) {
@@ -96,11 +121,22 @@ export default function DiaryEntry({ onComplete }: Props) {
     }
   };
 
+  // 星の位置が決まったらデータを親に返す
+  const handleStarComplete = (x: number, y: number) => {
+    if (previewUrl) {
+      onComplete({
+        photoUrl: previewUrl,
+        memo: note,
+        starPosition: { x, y }
+      });
+    }
+  };
+
   if (step === 'star' && previewUrl) {
     return (
       <StarPlacer 
         photoUrl={previewUrl} 
-        onComplete={onComplete} 
+        onComplete={handleStarComplete} 
         onBack={() => setStep('input')} 
       />
     );
@@ -118,7 +154,7 @@ export default function DiaryEntry({ onComplete }: Props) {
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={3 / 4}
+            aspect={CANVAS_CONSTANTS.CROP_ASPECT}
             onCropChange={setCrop}
             onCropComplete={onCropComplete}
             onZoomChange={setZoom}
@@ -162,14 +198,32 @@ export default function DiaryEntry({ onComplete }: Props) {
 
   return (
     <div style={{ padding: '20px' }}>
+      {/* 戻るボタン */}
+      <button
+        onClick={onCancel}
+        style={{
+          background: 'none', border: 'none', fontSize: '1rem',
+          cursor: 'pointer', marginBottom: '10px', color: '#666'
+        }}
+      >
+        ← 戻る
+      </button>
+      
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <label style={{ 
-          display: 'block', padding: '10px', border: '2px dashed #ccc', 
-          cursor: 'pointer', borderRadius: '8px', minHeight: '200px',
-          background: '#fafafa', position: 'relative'
+          display: 'block', 
+          width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
+          height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
+          margin: '0 auto',
+          border: '2px dashed #ccc', 
+          cursor: 'pointer', 
+          borderRadius: '8px',
+          background: '#fafafa', 
+          position: 'relative',
+          overflow: 'hidden'
         }}>
           {previewUrl ? (
-            <img src={previewUrl} style={{ maxWidth: '100%', display: 'block', margin: '0 auto' }} alt="Preview" />
+            <img src={previewUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="Preview" />
           ) : (
              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>
               📷 タップして写真を選ぶ
