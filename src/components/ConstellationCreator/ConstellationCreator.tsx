@@ -102,19 +102,36 @@ export function ConstellationCreator({
     starsRef.current = stars;
   }, [lines, stars]);
 
+  // アニメーション完了フラグをrefで管理（不要な再レンダリングを防ぐ）
+  const hasAnimationCompletedRef = useRef(false);
+
   // p5.js スケッチ
   const sketch: Sketch = useMemo(() => {
     return (p: p5) => {
       // 背景の装飾用小星
       const bgStars: { x: number; y: number; size: number; twinkle: number }[] = [];
       
+      // 背景をオフスクリーンバッファにキャッシュ
+      let bgBuffer: p5.Graphics | null = null;
+      let lastBgUpdateTime = 0;
+      const BG_UPDATE_INTERVAL = 50; // 背景更新間隔（ms）
+      
       // 線描画アニメーション用
       let lineAnimProgress = 0;
       const LINE_ANIM_SPEED = 0.02;
 
+      // 星の描画順をキャッシュ
+      const starDrawOrderCache = new Map<number, number>();
+
       p.setup = () => {
         p.createCanvas(width, height);
-        p.pixelDensity(Math.min(2, window.devicePixelRatio));
+        // 高DPIディスプレイでの最適化（必要に応じて調整）
+        const dpr = Math.min(2, window.devicePixelRatio);
+        p.pixelDensity(dpr);
+
+        // 背景バッファを作成
+        bgBuffer = p.createGraphics(width, height);
+        bgBuffer.pixelDensity(dpr);
 
         // 背景の装飾用小星を生成
         for (let i = 0; i < 100; i++) {
@@ -127,31 +144,75 @@ export function ConstellationCreator({
         }
       };
 
-      p.draw = () => {
-        const currentStars = starsRef.current;
-        const currentLines = linesRef.current;
-
-        // 背景
-        p.background('#0a0a20');
-
-        // 装飾用の小さな星を描画（瞬き効果）
-        p.noStroke();
-        for (const bgStar of bgStars) {
+      // 背景バッファを更新
+      const updateBackgroundBuffer = (time: number) => {
+        if (!bgBuffer) return;
+        
+        bgBuffer.background('#0a0a20');
+        bgBuffer.noStroke();
+        
+        for (let i = 0; i < bgStars.length; i++) {
+          const bgStar = bgStars[i];
           const alpha = p.map(
-            p.sin((p.millis() / bgStar.twinkle) * p.TWO_PI),
+            Math.sin((time / bgStar.twinkle) * p.TWO_PI),
             -1,
             1,
             60,
             200
           );
-          p.fill(255, 255, 255, alpha);
-          p.ellipse(bgStar.x, bgStar.y, bgStar.size);
+          bgBuffer.fill(255, 255, 255, alpha);
+          bgBuffer.ellipse(bgStar.x, bgStar.y, bgStar.size);
+        }
+      };
+
+      // 星の描画順を取得（キャッシュ付き）
+      const getStarDrawOrder = (starIndex: number, lines: ConstellationLine[]): number => {
+        if (starDrawOrderCache.has(starIndex)) {
+          return starDrawOrderCache.get(starIndex)!;
+        }
+        
+        let order: number;
+        if (starIndex === lines[0]?.fromIndex) {
+          order = 0;
+        } else {
+          order = lines.length + 1;
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].toIndex === starIndex) {
+              order = i + 1;
+              break;
+            }
+          }
+        }
+        
+        starDrawOrderCache.set(starIndex, order);
+        return order;
+      };
+
+      p.draw = () => {
+        const currentStars = starsRef.current;
+        const currentLines = linesRef.current;
+        const currentTime = p.millis();
+
+        // 背景バッファを一定間隔で更新（毎フレームではなく）
+        if (currentTime - lastBgUpdateTime > BG_UPDATE_INTERVAL) {
+          updateBackgroundBuffer(currentTime);
+          lastBgUpdateTime = currentTime;
+        }
+
+        // キャッシュした背景を描画
+        if (bgBuffer) {
+          p.image(bgBuffer, 0, 0);
+        } else {
+          p.background('#0a0a20');
         }
 
         // 線のアニメーション進行
-        if (lineAnimProgress < currentLines.length) {
+        const isStillAnimating = lineAnimProgress < currentLines.length;
+        if (isStillAnimating) {
           lineAnimProgress += LINE_ANIM_SPEED;
-        } else {
+        } else if (!hasAnimationCompletedRef.current) {
+          // アニメーション完了を一度だけ通知
+          hasAnimationCompletedRef.current = true;
           setIsAnimating(false);
         }
         animationProgressRef.current = lineAnimProgress;
@@ -172,13 +233,14 @@ export function ConstellationCreator({
             const currentX = p.lerp(from.x, to.x, lineProgress);
             const currentY = p.lerp(from.y, to.y, lineProgress);
 
-            // グロー効果のある線
-            for (let w = 6; w > 0; w -= 2) {
-              const alpha = p.map(w, 0, 6, 180, 30);
-              p.stroke(100, 150, 255, alpha);
-              p.strokeWeight(w);
-              p.line(from.x, from.y, currentX, currentY);
-            }
+            // グロー効果のある線（ループ回数を削減: 3回 → 2回）
+            p.stroke(100, 150, 255, 60);
+            p.strokeWeight(5);
+            p.line(from.x, from.y, currentX, currentY);
+            
+            p.stroke(100, 150, 255, 120);
+            p.strokeWeight(2.5);
+            p.line(from.x, from.y, currentX, currentY);
 
             // メインの線
             p.stroke(150, 200, 255, 220);
@@ -188,20 +250,22 @@ export function ConstellationCreator({
         }
 
         // 星を描画
+        p.noStroke();
         for (let i = 0; i < currentStars.length; i++) {
           const star = currentStars[i];
           
-          // 星番号（描画順）
-          const starOrder = getStarDrawOrder(i, currentLines, lineAnimProgress);
+          // 星番号（描画順）- キャッシュを使用
+          const starOrder = getStarDrawOrder(i, currentLines);
           const starAlpha = starOrder <= lineAnimProgress + 1 ? 255 : 100;
 
-          // 外側のグロー
-          p.noStroke();
-          for (let r = star.size * 4; r > 0; r -= 2) {
-            const alpha = p.map(r, 0, star.size * 4, starAlpha * 0.8, 0);
-            p.fill(255, 255, 220, alpha);
-            p.ellipse(star.x, star.y, r);
-          }
+          // 外側のグロー（ループ回数を削減: 段階的に描画）
+          const glowSize = star.size * 4;
+          p.fill(255, 255, 220, starAlpha * 0.05);
+          p.ellipse(star.x, star.y, glowSize);
+          p.fill(255, 255, 220, starAlpha * 0.15);
+          p.ellipse(star.x, star.y, glowSize * 0.6);
+          p.fill(255, 255, 220, starAlpha * 0.4);
+          p.ellipse(star.x, star.y, glowSize * 0.3);
 
           // 中心の明るい点
           p.fill(255, 255, 255, starAlpha);
@@ -214,6 +278,7 @@ export function ConstellationCreator({
             const sparkleSize = star.size * 2;
             p.line(star.x - sparkleSize, star.y, star.x + sparkleSize, star.y);
             p.line(star.x, star.y - sparkleSize, star.x, star.y + sparkleSize);
+            p.noStroke();
           }
         }
 
@@ -227,18 +292,6 @@ export function ConstellationCreator({
           p.text(constellationName, width / 2, height - 30);
         }
       };
-
-      // 星の描画順を取得（アニメーション用）
-      function getStarDrawOrder(starIndex: number, lines: ConstellationLine[], progress: number): number {
-        if (starIndex === lines[0]?.fromIndex) return 0;
-        
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].toIndex === starIndex) {
-            return i + 1;
-          }
-        }
-        return lines.length + 1;
-      }
     };
   }, [width, height, isAnimating, constellationName]);
 
