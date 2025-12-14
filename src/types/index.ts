@@ -37,6 +37,8 @@ export interface Constellation {
   name: string;
   /** 紐づく DiaryEntry の ID（7件） */
   entryIds: number[];
+  /** 星をつなぐ線の配列 */
+  lines: ConstellationLine[];
   /** 作成日時 */
   createdAt: Date;
 }

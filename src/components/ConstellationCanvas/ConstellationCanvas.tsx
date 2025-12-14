@@ -1,8 +1,31 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import type p5 from 'p5';
 import { useP5, type Sketch } from '../../hooks/useP5';
 import type { Star, ConstellationLine, OnStarClick } from '../../types';
 import './ConstellationCanvas.css';
+
+// ============================================
+// 新しい星エフェクトの型
+// ============================================
+interface NewStarEffect {
+  x: number;
+  y: number;
+  timestamp: number;
+}
+
+// ============================================
+// パーティクル（星追加時のエフェクト用）
+// ============================================
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  size: number;
+  color: { r: number; g: number; b: number };
+}
 
 interface ConstellationCanvasProps {
   /** 星の配列 */
@@ -23,10 +46,14 @@ interface ConstellationCanvasProps {
   starColor?: string;
   /** 線の色 */
   lineColor?: string;
+  /** カメラのX方向オフセット（スワイプ用） */
+  cameraOffset?: number;
+  /** 新しい星のエフェクト */
+  newStarEffect?: NewStarEffect | null;
 }
 
 /**
- * p5.js で星座を描画するコンポーネント
+ * p5.js で星座を描画するコンポーネント（常駐背景版）
  */
 export function ConstellationCanvas({
   stars,
@@ -38,34 +65,77 @@ export function ConstellationCanvas({
   backgroundColor = '#0a0a20',
   starColor = '#ffffff',
   lineColor = '#4a6fa5',
+  cameraOffset = 0,
+  newStarEffect = null,
 }: ConstellationCanvasProps) {
-  // スケッチ関数を生成
+  // 外部からの値を p5 スケッチ内で参照するための ref
+  const starsRef = useRef(stars);
+  const linesRef = useRef(lines);
+  const cameraOffsetRef = useRef(cameraOffset);
+  const newStarEffectRef = useRef(newStarEffect);
+
+  // ref を更新（再レンダリングせずに値を更新）
+  useEffect(() => {
+    starsRef.current = stars;
+  }, [stars]);
+
+  useEffect(() => {
+    linesRef.current = lines;
+  }, [lines]);
+
+  useEffect(() => {
+    cameraOffsetRef.current = cameraOffset;
+  }, [cameraOffset]);
+
+  useEffect(() => {
+    newStarEffectRef.current = newStarEffect;
+  }, [newStarEffect]);
+
+  // スケッチ関数を生成（一度だけ）
   const sketch: Sketch = useMemo(() => {
     return (p: p5) => {
       // クリック判定用の星の半径
-      const CLICK_RADIUS = 15;
+      const CLICK_RADIUS = 20;
 
       // 背景の小さな星（装飾用）
       const bgStars: { x: number; y: number; size: number; twinkle: number }[] = [];
 
+      // パーティクルシステム
+      const particles: Particle[] = [];
+
+      // 新しい星のフラッシュ効果
+      let flashAlpha = 0;
+      let flashX = 0;
+      let flashY = 0;
+      let lastEffectTimestamp = 0;
+
       p.setup = () => {
         p.createCanvas(width, height);
-        p.pixelDensity(2);
+        p.pixelDensity(Math.min(2, window.devicePixelRatio));
 
-        // 背景の装飾用小星を生成
-        for (let i = 0; i < 50; i++) {
+        // 背景の装飾用小星を生成（広範囲に配置）
+        for (let i = 0; i < 200; i++) {
           bgStars.push({
-            x: p.random(width),
+            x: p.random(-500, width + 2000), // スクロール用に広範囲
             y: p.random(height),
-            size: p.random(0.5, 2),
-            twinkle: p.random(1000, 3000),
+            size: p.random(0.5, 2.5),
+            twinkle: p.random(1000, 4000),
           });
         }
       };
 
       p.draw = () => {
+        const currentCameraOffset = cameraOffsetRef.current;
+        const currentStars = starsRef.current;
+        const currentLines = linesRef.current;
+        const currentEffect = newStarEffectRef.current;
+
         // 背景
         p.background(backgroundColor);
+
+        // カメラ変換を適用
+        p.push();
+        p.translate(currentCameraOffset, 0);
 
         // 装飾用の小さな星を描画（瞬き効果）
         p.noStroke();
@@ -74,7 +144,7 @@ export function ConstellationCanvas({
             p.sin((p.millis() / bgStar.twinkle) * p.TWO_PI),
             -1,
             1,
-            100,
+            80,
             255
           );
           p.fill(255, 255, 255, alpha);
@@ -84,30 +154,82 @@ export function ConstellationCanvas({
         // 星座の線を描画
         p.stroke(lineColor);
         p.strokeWeight(1.5);
-        for (const line of lines) {
-          const from = stars[line.fromIndex];
-          const to = stars[line.toIndex];
+        for (const line of currentLines) {
+          const from = currentStars[line.fromIndex];
+          const to = currentStars[line.toIndex];
           if (from && to) {
+            // グラデーション効果
+            p.stroke(74, 111, 165, 180);
             p.line(from.x, from.y, to.x, to.y);
           }
         }
 
         // 星を描画
-        for (const star of stars) {
-          // 星のグロー効果
-          p.noStroke();
-          for (let r = star.size * 3; r > 0; r -= 2) {
-            const alpha = p.map(r, 0, star.size * 3, star.brightness, 0);
-            p.fill(255, 255, 200, alpha);
-            p.ellipse(star.x, star.y, r);
-          }
-
-          // 星の中心
-          p.fill(starColor);
-          p.ellipse(star.x, star.y, star.size);
+        for (const star of currentStars) {
+          drawStar(p, star.x, star.y, star.size, star.brightness);
         }
 
-        // 星座名を描画
+        p.pop();
+
+        // ---- 新しい星のエフェクト処理 ----
+        if (currentEffect && currentEffect.timestamp !== lastEffectTimestamp) {
+          lastEffectTimestamp = currentEffect.timestamp;
+          flashX = currentEffect.x;
+          flashY = currentEffect.y;
+          flashAlpha = 255;
+
+          // パーティクルを生成
+          for (let i = 0; i < 30; i++) {
+            const angle = p.random(p.TWO_PI);
+            const speed = p.random(2, 8);
+            particles.push({
+              x: flashX,
+              y: flashY,
+              vx: p.cos(angle) * speed,
+              vy: p.sin(angle) * speed,
+              life: 60,
+              maxLife: 60,
+              size: p.random(2, 6),
+              color: {
+                r: p.random(200, 255),
+                g: p.random(200, 255),
+                b: p.random(100, 200),
+              },
+            });
+          }
+        }
+
+        // フラッシュ効果を描画
+        if (flashAlpha > 0) {
+          p.noStroke();
+          // 外側のグロー
+          for (let r = 150; r > 0; r -= 10) {
+            const a = p.map(r, 0, 150, flashAlpha * 0.8, 0);
+            p.fill(255, 255, 200, a);
+            p.ellipse(flashX, flashY, r);
+          }
+          flashAlpha -= 8;
+        }
+
+        // パーティクルを更新・描画
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const particle = particles[i];
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+          particle.vy += 0.1; // 重力
+          particle.life--;
+
+          const alpha = p.map(particle.life, 0, particle.maxLife, 0, 255);
+          p.noStroke();
+          p.fill(particle.color.r, particle.color.g, particle.color.b, alpha);
+          p.ellipse(particle.x, particle.y, particle.size);
+
+          if (particle.life <= 0) {
+            particles.splice(i, 1);
+          }
+        }
+
+        // 星座名を描画（固定位置）
         if (name) {
           p.fill(255, 255, 255, 200);
           p.noStroke();
@@ -117,18 +239,45 @@ export function ConstellationCanvas({
         }
       };
 
+      // 星を描画するヘルパー関数
+      function drawStar(p: p5, x: number, y: number, size: number, brightness: number) {
+        p.noStroke();
+        // 外側のグロー
+        for (let r = size * 4; r > 0; r -= 2) {
+          const alpha = p.map(r, 0, size * 4, brightness, 0);
+          p.fill(255, 255, 220, alpha);
+          p.ellipse(x, y, r);
+        }
+        // 中心の明るい点
+        p.fill(starColor);
+        p.ellipse(x, y, size);
+        // 十字のキラキラ
+        p.stroke(255, 255, 255, brightness * 0.5);
+        p.strokeWeight(1);
+        const sparkleSize = size * 2;
+        p.line(x - sparkleSize, y, x + sparkleSize, y);
+        p.line(x, y - sparkleSize, x, y + sparkleSize);
+      }
+
       // クリックイベント
       p.mousePressed = () => {
         if (!onStarClick) return;
+
+        const currentCameraOffset = cameraOffsetRef.current;
+        const currentStars = starsRef.current;
 
         // クリック位置が canvas 内かチェック
         if (p.mouseX < 0 || p.mouseX > width || p.mouseY < 0 || p.mouseY > height) {
           return;
         }
 
+        // カメラオフセットを考慮したマウス位置
+        const worldX = p.mouseX - currentCameraOffset;
+        const worldY = p.mouseY;
+
         // クリックされた星を探す
-        for (const star of stars) {
-          const d = p.dist(p.mouseX, p.mouseY, star.x, star.y);
+        for (const star of currentStars) {
+          const d = p.dist(worldX, worldY, star.x, star.y);
           if (d < CLICK_RADIUS) {
             onStarClick(star.entryId);
             break;
@@ -136,7 +285,7 @@ export function ConstellationCanvas({
         }
       };
     };
-  }, [stars, lines, name, width, height, onStarClick, backgroundColor, starColor, lineColor]);
+  }, [width, height, onStarClick, backgroundColor, starColor, lineColor, name]);
 
   // p5.js の ref を取得
   const containerRef = useP5(sketch, [sketch]);

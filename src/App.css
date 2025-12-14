@@ -1,42 +1,244 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
+/* ============================================
+   星座日記 - 最小限スタイル
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: sans-serif;
+  background-color: #0a0a20;
+  color: #ffffff;
+}
+
+/* App Container */
+.app-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Layer 1: Canvas */
+.layer-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  transition: transform 0.3s ease-out;
+}
+
+.layer-canvas.dragging {
+  transition: none;
+}
+
+/* Layer 2: Photo Overlay */
+.photo-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background-color: #000;
+  transition: opacity 1.5s ease-out;
+}
+
+.photo-overlay.fading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.photo-overlay-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Layer 3: UI Overlay */
+.layer-ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.layer-ui > * {
+  pointer-events: auto;
+}
+
+/* Home UI */
+.ui-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
   padding: 2rem;
-  text-align: center;
+  pointer-events: none;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* 上部ヘッダー */
+.home-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  pointer-events: auto;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* 中央エリア（星座表示、タッチ透過） */
+.home-center {
+  flex: 1;
+  pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* 星座インジケーター */
+.constellation-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.card {
-  padding: 2em;
+.constellation-name {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.read-the-docs {
-  color: #888;
+.constellation-dots {
+  display: flex;
+  gap: 0.5rem;
 }
+
+.constellation-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 0.2s;
+}
+
+.constellation-dots .dot.active {
+  background: #fff;
+}
+
+/* 下部アクション */
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  pointer-events: auto;
+}
+
+/* Entry UI */
+.ui-entry {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(10, 10, 32, 0.95);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.entry-form-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.photo-input-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #666;
+}
+
+.photo-select-label {
+  cursor: pointer;
+  color: #999;
+}
+
+.photo-input-hidden {
+  display: none;
+}
+
+.photo-preview-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.memo-input {
+  width: 100%;
+  padding: 0.5rem;
+  background: #222;
+  border: 1px solid #444;
+  color: #fff;
+  resize: none;
+}
+
+/* Star Placer UI */
+.ui-star-placer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  pointer-events: none;
+}
+
+.star-placer-instruction {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1rem;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  cursor: pointer;
+  background: #444;
+  color: #fff;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+}
+
+.btn-primary {
+  background: #667eea;
+}
+
+.btn-secondary {
+  background: #f5576c;
+}
+

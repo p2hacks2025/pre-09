@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { DiaryEntry, Constellation, StarPosition } from '../types';
+import type { DiaryEntry, Constellation, StarPosition, ConstellationLine } from '../types';
 
 // ============================================
 // Dexie データベースクラス
@@ -117,11 +117,13 @@ export async function deleteDiaryEntry(id: number): Promise<void> {
  */
 export async function createConstellation(
   name: string,
-  entryIds: number[]
+  entryIds: number[],
+  lines: ConstellationLine[]
 ): Promise<number> {
   return await db.constellations.add({
     name,
     entryIds,
+    lines,
     createdAt: new Date(),
   });
 }
