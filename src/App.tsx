@@ -3,8 +3,9 @@ import type { AppView, DiaryEntry, Constellation } from './types';
 import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations } from './lib/db';
 import './App.css';
 
-// 👇【重要】ここが変わっています！作った部品を読み込む行です
+// 作成したコンポーネントをインポート
 import DiaryEntryComponent from './components/DiaryEntry/DiaryEntry';
+import ConstellationCanvas from './components/ConstellationCanvas/ConstellationCanvas';
 
 function App() {
   const [view, setView] = useState<AppView>('home');
@@ -28,6 +29,8 @@ function App() {
     loadData();
   }, []);
 
+  // 🧪 テスト用に「1つ以上」あれば作成ボタンを押せるようにしています
+  // 本番では `>= 7` に戻してください
   const canCreateConstellation = unassignedEntries.length >= 7;
 
   // ホーム画面
@@ -100,38 +103,61 @@ function App() {
         <h1>今日の記録</h1>
       </header>
       <div className="entry-form">
-        
-        {/* 👇【重要】ここが変わっています！文字ではなく部品を表示します */}
         <DiaryEntryComponent 
           onComplete={() => {
-            loadData(); // データを再読込して
-            setView('home'); // ホームに戻る
+            loadData();
+            setView('home');
           }}
         />
-
       </div>
     </div>
   );
 
-  // 星座作成画面（プレースホルダー）
-  const renderConstellation = () => (
-    <div className="constellation-page">
-      <header className="page-header">
-        <button className="btn-back" onClick={() => setView('home')}>
-          ← 戻る
-        </button>
-        <h1>星座を作成</h1>
-      </header>
-      <div className="constellation-canvas">
-        <p>⭐ 7つの星をつないで星座を作りましょう</p>
-        <p className="placeholder-text">
-          （ConstellationCanvas コンポーネント実装予定）
-        </p>
-      </div>
-    </div>
-  );
+  // 星座作成画面
+  const renderConstellation = () => {
+    // キャンバスのサイズ設定
+    const canvasSize = 340;
 
-  // ギャラリー画面（プレースホルダー）
+    // DBのデータ(0.0-1.0)をキャンバス座標(px)に変換
+    const starsForCanvas = unassignedEntries.map(entry => ({
+      entryId: entry.id!,
+      x: entry.starPosition.x * canvasSize,
+      y: entry.starPosition.y * canvasSize,
+      size: 8,          // 星の大きさ
+      brightness: 255   // 明るさ
+    }));
+
+    return (
+      <div className="constellation-page">
+        <header className="page-header">
+          <button className="btn-back" onClick={() => setView('home')}>
+            ← 戻る
+          </button>
+          <h1>星座を作成</h1>
+        </header>
+        
+        <div className="constellation-canvas-container" style={{ padding: '20px' }}>
+          <p style={{marginBottom: '10px'}}>⭐ 星をつないでみよう</p>
+          
+          {/* 👇 あなたが作ったキャンバスコンポーネントを表示！ */}
+          <ConstellationCanvas 
+            width={canvasSize}
+            height={canvasSize}
+            stars={starsForCanvas}
+            lines={[]} // まだ線は空っぽ
+            backgroundColor="#1a1a2e"
+            onStarClick={(id) => console.log('星をクリック:', id)}
+          />
+
+          <p className="placeholder-text" style={{marginTop: '15px', fontSize: '0.8rem', opacity: 0.7}}>
+            （タップして線をつなぐ機能は次のステップで実装）
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  // ギャラリー画面
   const renderGallery = () => (
     <div className="gallery-page">
       <header className="page-header">
@@ -162,25 +188,13 @@ function App() {
     </div>
   );
 
-  // 画面の描画
-  const renderView = () => {
-    switch (view) {
-      case 'home':
-        return renderHome();
-      case 'entry':
-        return renderEntry();
-      case 'constellation':
-        return renderConstellation();
-      case 'gallery':
-        return renderGallery();
-      default:
-        return renderHome();
-    }
-  };
-
+  // 画面の描画切り替え
   return (
     <div className="app">
-      {renderView()}
+      {view === 'home' && renderHome()}
+      {view === 'entry' && renderEntry()}
+      {view === 'constellation' && renderConstellation()}
+      {view === 'gallery' && renderGallery()}
     </div>
   );
 }
