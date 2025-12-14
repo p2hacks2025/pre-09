@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AppView, DiaryEntry as DiaryEntryType, Constellation, Star, StarPosition, ConstellationLine } from './types';
+import { CANVAS_CONSTANTS } from './types';
 import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations, addDiaryEntry, createConstellation, resetAllData, createTestData } from './lib/db';
 import ConstellationCanvas from './components/ConstellationCanvas/ConstellationCanvas';
 import ConstellationCreator from './components/ConstellationCreator/ConstellationCreator';
@@ -29,16 +30,18 @@ function App() {
 
   // ----- カメラ（スワイプ）状態 -----
   const [currentConstellationIndex, setCurrentConstellationIndex] = useState(0);
-  const [cameraOffset, setCameraOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragDelta, setDragDelta] = useState(0);
   const dragStartX = useRef(0);
 
+  // ----- 画面サイズ（中央配置用） -----
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 400);
+
   // ----- デバッグモード -----
   const [debugMode, setDebugMode] = useState(true);
 
-  // 星座1つあたりの幅（px）
-  const CONSTELLATION_WIDTH = 400;
+  // 星座1つあたりの幅（px）- 共通定数を使用
+  const CONSTELLATION_WIDTH = CANVAS_CONSTANTS.CONSTELLATION_WIDTH;
 
   // ----- 新しい星エフェクト -----
   const [newStarEffect, setNewStarEffect] = useState<NewStarEffect | null>(null);
@@ -52,8 +55,10 @@ function App() {
   // 星座の総数（未割り当てエントリも1グループとしてカウント）
   const totalConstellationGroups = constellations.length + (unassignedEntries.length > 0 ? 1 : 0);
 
-  // 現在のカメラオフセットを計算（星座インデックス + ドラッグ中のデルタ）
-  const currentCameraOffset = -currentConstellationIndex * CONSTELLATION_WIDTH + dragDelta;
+  // 現在のカメラオフセットを計算（星座を画面中央に配置）
+  // 星座の中心を画面中央に合わせる: 画面幅の半分 - 星座の中心位置
+  const centerOffset = windowWidth / 2 - CONSTELLATION_WIDTH / 2;
+  const currentCameraOffset = -currentConstellationIndex * CONSTELLATION_WIDTH + dragDelta + centerOffset;
 
   // データの読み込み
   const loadData = useCallback(async () => {
@@ -76,8 +81,8 @@ function App() {
     const stars: Star[] = allEntries.map((entry, index) => ({
       entryId: entry.id!,
       // 星座ごとにX座標をオフセット（7日分ごとにグループ化）
-      x: (entry.starPosition.x * 300) + Math.floor(index / 7) * CONSTELLATION_WIDTH + 50,
-      y: entry.starPosition.y * 300 + 50,
+      x: (entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH) + Math.floor(index / 7) * CONSTELLATION_WIDTH + CANVAS_CONSTANTS.PADDING,
+      y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING,
       brightness: 200,
       size: 8,
     }));
@@ -105,6 +110,15 @@ function App() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // ウィンドウサイズ変更時に更新
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ============================================
   // スワイプハンドラー (星座切り替え)

@@ -2,6 +2,7 @@ import { useMemo, useRef, useEffect } from 'react';
 import type p5 from 'p5';
 import { useP5, type Sketch } from '../../hooks/useP5';
 import type { Star, ConstellationLine, OnStarClick } from '../../types';
+import { CANVAS_CONSTANTS } from '../../types';
 import './ConstellationCanvas.css';
 
 // ============================================
@@ -65,8 +66,8 @@ export function ConstellationCanvas({
   stars,
   lines,
   name,
-  width = 400,
-  height = 400,
+  width = CANVAS_CONSTANTS.CONSTELLATION_WIDTH,
+  height = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT,
   onStarClick,
   backgroundColor = '#0a0a20',
   starColor = '#ffffff',
@@ -74,7 +75,7 @@ export function ConstellationCanvas({
   cameraOffset = 0,
   newStarEffect = null,
   debugMode = false,
-  constellationWidth = 400,
+  constellationWidth = CANVAS_CONSTANTS.CONSTELLATION_WIDTH,
   constellationCount = 0,
 }: ConstellationCanvasProps) {
   // 外部からの値を p5 スケッチ内で参照するための ref
@@ -199,10 +200,10 @@ export function ConstellationCanvas({
             p.textSize(10);
             p.text(`x: ${x} - ${x + constWidth}`, x + 10, 30);
 
-            // 星の描画領域（padding考慮）
-            const padding = 50;
-            const starAreaWidth = 300;
-            const starAreaHeight = 300;
+            // 星の描画領域（padding考慮）- 共通定数から取得
+            const padding = CANVAS_CONSTANTS.PADDING;
+            const starAreaWidth = CANVAS_CONSTANTS.STAR_AREA_WIDTH;
+            const starAreaHeight = CANVAS_CONSTANTS.STAR_AREA_HEIGHT;
             p.stroke(255, 255, 0, 100);
             p.strokeWeight(1);
             p.noFill();

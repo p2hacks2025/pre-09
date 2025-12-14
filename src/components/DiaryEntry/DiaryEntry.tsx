@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef, type ChangeEvent } from 'react';
 import StarPlacer from '../StarPlacer/StarPlacer';
 import Cropper, { type Area } from 'react-easy-crop';
+import { CANVAS_CONSTANTS } from '../../types';
 
 
 // TypeScriptに「これはReactコンポーネントとして扱ってOK」と明示的に伝えます。
@@ -153,7 +154,7 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={3 / 4}
+            aspect={CANVAS_CONSTANTS.CROP_ASPECT}
             onCropChange={setCrop}
             onCropComplete={onCropComplete}
             onZoomChange={setZoom}
