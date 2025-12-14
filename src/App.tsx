@@ -289,7 +289,6 @@ function App() {
         </button>
         <h1>今日の記録</h1>
       </header>
-<<<<<<< HEAD
 
       <div className="entry-form-container">
         {/* 写真選択 */}
