@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { AppView, DiaryEntry, Constellation, Star, StarPosition, ConstellationLine } from './types';
-import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations, addDiaryEntry, createConstellation } from './lib/db';
+import type { AppView, DiaryEntry as DiaryEntryType, Constellation, Star, StarPosition, ConstellationLine } from './types';
+import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations, addDiaryEntry, createConstellation, resetAllData, createTestData } from './lib/db';
 import ConstellationCanvas from './components/ConstellationCanvas/ConstellationCanvas';
 import ConstellationCreator from './components/ConstellationCreator/ConstellationCreator';
+import DiaryEntryComponent from './components/DiaryEntry/DiaryEntry';
 import './App.css';
 
 // ============================================
@@ -22,8 +23,8 @@ function App() {
   const [view, setView] = useState<AppView>('home');
 
   // ----- データ状態 -----
-  const [entries, setEntries] = useState<DiaryEntry[]>([]);
-  const [unassignedEntries, setUnassignedEntries] = useState<DiaryEntry[]>([]);
+  const [entries, setEntries] = useState<DiaryEntryType[]>([]);
+  const [unassignedEntries, setUnassignedEntries] = useState<DiaryEntryType[]>([]);
   const [constellations, setConstellations] = useState<Constellation[]>([]);
 
   // ----- カメラ（スワイプ）状態 -----
@@ -33,16 +34,11 @@ function App() {
   const [dragDelta, setDragDelta] = useState(0);
   const dragStartX = useRef(0);
 
+  // ----- デバッグモード -----
+  const [debugMode, setDebugMode] = useState(true);
+
   // 星座1つあたりの幅（px）
   const CONSTELLATION_WIDTH = 400;
-
-  // ----- Layer 2: PhotoOverlay 状態 -----
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
-  const [isPhotoFading, setIsPhotoFading] = useState(false);
-
-  // ----- Entry入力状態 -----
-  const [entryMemo, setEntryMemo] = useState('');
 
   // ----- 新しい星エフェクト -----
   const [newStarEffect, setNewStarEffect] = useState<NewStarEffect | null>(null);
@@ -145,41 +141,24 @@ function App() {
   };
 
   // ============================================
-  // 写真選択ハンドラー
+  // DiaryEntryからのデータ受け取り → DB保存
   // ============================================
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    const url = URL.createObjectURL(file);
-    setPhotoPreviewUrl(url);
-    setPhotoBlob(file);
-  };
-
-  // ============================================
-  // Entry完了 → StarPlacer画面へ
-  // ============================================
-  const handleEntryComplete = () => {
-    if (!photoBlob || !entryMemo.trim()) {
-      alert('写真とメモを入力してください');
-      return;
-    }
-    setView('star-placer');
-  };
-
-  // ============================================
-  // 星配置決定 → 魔法の遷移
-  // ============================================
-  const handleStarPlace = async (position: StarPosition) => {
-    if (!photoBlob) return;
+  const handleDiaryEntryComplete = async (data: { 
+    photoUrl: string; 
+    memo: string; 
+    starPosition: { x: number; y: number } 
+  }) => {
+    // photoUrlからBlobを取得
+    const response = await fetch(data.photoUrl);
+    const blob = await response.blob();
 
     // 1. DBに保存
     const today = new Date().toISOString().split('T')[0];
-    await addDiaryEntry(today, photoBlob, entryMemo, position);
+    await addDiaryEntry(today, blob, data.memo, data.starPosition);
 
     // 2. 新しい星のキャンバス座標を計算
-    const canvasX = position.x * window.innerWidth;
-    const canvasY = position.y * window.innerHeight;
+    const canvasX = data.starPosition.x * window.innerWidth;
+    const canvasY = data.starPosition.y * window.innerHeight;
 
     // 3. 新しい星をCanvasに追加（エフェクト付き）
     setNewStarEffect({
@@ -188,18 +167,9 @@ function App() {
       timestamp: Date.now(),
     });
 
-    // 4. Layer 2 をフェードアウト開始
-    setIsPhotoFading(true);
-
-    // 5. フェードアウト完了後にHOMEへ遷移
-    setTimeout(() => {
-      setIsPhotoFading(false);
-      setPhotoPreviewUrl(null);
-      setPhotoBlob(null);
-      setEntryMemo('');
-      setView('home');
-      loadData(); // データ再読み込み
-    }, 1500); // フェードアウトアニメーション時間
+    // 4. データを再読み込みしてホームへ
+    await loadData();
+    setView('home');
   };
 
   // ============================================
@@ -222,8 +192,6 @@ function App() {
         return renderHomeUI();
       case 'entry':
         return renderEntryUI();
-      case 'star-placer':
-        return renderStarPlacerUI();
       case 'constellation':
         return renderConstellationCreator();
       default:
@@ -240,6 +208,20 @@ function App() {
       || (currentConstellationIndex === constellations.length && unassignedEntries.length > 0 
           ? `作成中 (${unassignedEntries.length}/7)` 
           : '');
+
+    // テストデータ作成
+    const handleCreateTestData = async () => {
+      await createTestData();
+      await loadData();
+      setCurrentConstellationIndex(0);
+    };
+
+    // データリセット
+    const handleResetData = async () => {
+      await resetAllData();
+      await loadData();
+      setCurrentConstellationIndex(0);
+    };
 
     return (
       <div className="ui-home">
@@ -276,66 +258,32 @@ function App() {
             </button>
           )}
         </div>
+
+        {/* デバッグパネル */}
+        {debugMode && (
+          <div className="debug-panel">
+            <div className="debug-info">
+              <p>星座数: {constellations.length} | 未割当: {unassignedEntries.length}</p>
+              <p>現在Index: {currentConstellationIndex} | 幅: {CONSTELLATION_WIDTH}px</p>
+              <p>カメラOffset: {currentCameraOffset}px</p>
+            </div>
+            <div className="debug-buttons">
+              <button onClick={handleCreateTestData}>🧪 テストデータ作成</button>
+              <button onClick={handleResetData}>🗑️ リセット</button>
+              <button onClick={() => setDebugMode(false)}>❌ デバッグ非表示</button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   // ----- ENTRY UI -----
   const renderEntryUI = () => (
-    <div className="ui-entry">
-      <header className="page-header">
-        <button className="btn-back" onClick={() => setView('home')}>
-          ← 戻る
-        </button>
-        <h1>今日の記録</h1>
-      </header>
-
-      <div className="entry-form-container">
-        {/* 写真選択 */}
-        <div className="photo-input-area">
-          {photoPreviewUrl ? (
-            <img src={photoPreviewUrl} alt="Preview" className="photo-preview-thumb" />
-          ) : (
-            <label className="photo-select-label">
-              <span>📷 写真を選択</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoSelect}
-                className="photo-input-hidden"
-              />
-            </label>
-          )}
-        </div>
-
-        {/* メモ入力 */}
-        <textarea
-          className="memo-input"
-          placeholder="今日のひとこと..."
-          value={entryMemo}
-          onChange={(e) => setEntryMemo(e.target.value)}
-          rows={3}
-        />
-
-        {/* 完了ボタン */}
-        <button
-          className="btn btn-primary"
-          onClick={handleEntryComplete}
-          disabled={!photoBlob || !entryMemo.trim()}
-        >
-          次へ → 星を配置する
-        </button>
-      </div>
-    </div>
-  );
-
-  // ----- STAR PLACER UI -----
-  const renderStarPlacerUI = () => (
-    <div className="ui-star-placer">
-      <div className="star-placer-instruction">
-        <p>✨ 写真の上をタップして、星を置く場所を選んでください</p>
-      </div>
-    </div>
+    <DiaryEntryComponent
+      onComplete={handleDiaryEntryComplete}
+      onCancel={() => setView('home')}
+    />
   );
 
   // ----- CONSTELLATION CREATOR -----
@@ -383,30 +331,6 @@ function App() {
   };
 
   // ============================================
-  // Layer 2: PhotoOverlay のレンダリング
-  // ============================================
-  const renderPhotoOverlay = () => {
-    if (view !== 'star-placer' || !photoPreviewUrl) return null;
-
-    return (
-      <div
-        className={`photo-overlay ${isPhotoFading ? 'fading' : ''}`}
-        onClick={(e) => {
-          if (isPhotoFading) return;
-          // クリック位置を正規化座標に変換
-          const rect = e.currentTarget.getBoundingClientRect();
-          const x = (e.clientX - rect.left) / rect.width;
-          const y = (e.clientY - rect.top) / rect.height;
-          handleStarPlace({ x, y });
-        }}
-      >
-        <img src={photoPreviewUrl} alt="Your photo" className="photo-overlay-image" />
-        {/* タップ位置に星のプレビューを表示することも可能 */}
-      </div>
-    );
-  };
-
-  // ============================================
   // メインレンダリング（3層構造）
   // ============================================
   return (
@@ -427,13 +351,13 @@ function App() {
           onStarClick={handleStarClick}
           width={window.innerWidth}
           height={window.innerHeight}
+          debugMode={debugMode}
+          constellationWidth={CONSTELLATION_WIDTH}
+          constellationCount={constellations.length}
         />
       </div>
 
-      {/* Layer 2: PhotoOverlay */}
-      {renderPhotoOverlay()}
-
-      {/* Layer 3: UIOverlay */}
+      {/* Layer 2: UIOverlay */}
       <div className="layer-ui">
         {renderUIOverlay()}
       </div>

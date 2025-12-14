@@ -50,6 +50,12 @@ interface ConstellationCanvasProps {
   cameraOffset?: number;
   /** 新しい星のエフェクト */
   newStarEffect?: NewStarEffect | null;
+  /** デバッグモード（領域表示） */
+  debugMode?: boolean;
+  /** 星座の幅（デバッグ表示用） */
+  constellationWidth?: number;
+  /** 星座の数（デバッグ表示用） */
+  constellationCount?: number;
 }
 
 /**
@@ -67,12 +73,18 @@ export function ConstellationCanvas({
   lineColor = '#4a6fa5',
   cameraOffset = 0,
   newStarEffect = null,
+  debugMode = false,
+  constellationWidth = 400,
+  constellationCount = 0,
 }: ConstellationCanvasProps) {
   // 外部からの値を p5 スケッチ内で参照するための ref
   const starsRef = useRef(stars);
   const linesRef = useRef(lines);
   const cameraOffsetRef = useRef(cameraOffset);
   const newStarEffectRef = useRef(newStarEffect);
+  const debugModeRef = useRef(debugMode);
+  const constellationWidthRef = useRef(constellationWidth);
+  const constellationCountRef = useRef(constellationCount);
 
   // ref を更新（再レンダリングせずに値を更新）
   useEffect(() => {
@@ -90,6 +102,18 @@ export function ConstellationCanvas({
   useEffect(() => {
     newStarEffectRef.current = newStarEffect;
   }, [newStarEffect]);
+
+  useEffect(() => {
+    debugModeRef.current = debugMode;
+  }, [debugMode]);
+
+  useEffect(() => {
+    constellationWidthRef.current = constellationWidth;
+  }, [constellationWidth]);
+
+  useEffect(() => {
+    constellationCountRef.current = constellationCount;
+  }, [constellationCount]);
 
   // スケッチ関数を生成（一度だけ）
   const sketch: Sketch = useMemo(() => {
@@ -129,6 +153,9 @@ export function ConstellationCanvas({
         const currentStars = starsRef.current;
         const currentLines = linesRef.current;
         const currentEffect = newStarEffectRef.current;
+        const isDebugMode = debugModeRef.current;
+        const constWidth = constellationWidthRef.current;
+        const constCount = constellationCountRef.current;
 
         // 背景
         p.background(backgroundColor);
@@ -136,6 +163,55 @@ export function ConstellationCanvas({
         // カメラ変換を適用
         p.push();
         p.translate(currentCameraOffset, 0);
+
+        // ===== デバッグモード: 星座領域を半透明の長方形で表示 =====
+        if (isDebugMode) {
+          const colors = [
+            [255, 100, 100, 40],  // 赤
+            [100, 255, 100, 40],  // 緑
+            [100, 100, 255, 40],  // 青
+            [255, 255, 100, 40],  // 黄
+            [255, 100, 255, 40],  // マゼンタ
+          ];
+
+          // 星座ごとの領域を描画
+          for (let i = 0; i < constCount + 1; i++) { // +1 for unassigned
+            const color = colors[i % colors.length];
+            const x = i * constWidth;
+            
+            // 半透明の背景
+            p.noStroke();
+            p.fill(color[0], color[1], color[2], color[3]);
+            p.rect(x, 0, constWidth, height);
+
+            // 境界線
+            p.stroke(color[0], color[1], color[2], 150);
+            p.strokeWeight(2);
+            p.line(x, 0, x, height);
+            p.line(x + constWidth, 0, x + constWidth, height);
+
+            // ラベル
+            p.fill(255, 255, 255, 200);
+            p.noStroke();
+            p.textSize(14);
+            p.textAlign(p.LEFT, p.TOP);
+            p.text(`星座 ${i + 1}`, x + 10, 10);
+            p.textSize(10);
+            p.text(`x: ${x} - ${x + constWidth}`, x + 10, 30);
+
+            // 星の描画領域（padding考慮）
+            const padding = 50;
+            const starAreaWidth = 300;
+            const starAreaHeight = 300;
+            p.stroke(255, 255, 0, 100);
+            p.strokeWeight(1);
+            p.noFill();
+            p.rect(x + padding, padding, starAreaWidth, starAreaHeight);
+            p.fill(255, 255, 0, 150);
+            p.textSize(10);
+            p.text(`星描画領域 (${starAreaWidth}x${starAreaHeight})`, x + padding + 5, padding + 5);
+          }
+        }
 
         // 装飾用の小さな星を描画（瞬き効果）
         p.noStroke();

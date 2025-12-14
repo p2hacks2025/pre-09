@@ -58,10 +58,11 @@ async function getCroppedImg(
 // =================================================================
 
 type Props = {
-  onComplete: () => void;
+  onComplete: (data: { photoUrl: string; memo: string; starPosition: { x: number; y: number } }) => void;
+  onCancel: () => void;
 };
 
-export default function DiaryEntry({ onComplete }: Props) {
+export default function DiaryEntry({ onComplete, onCancel }: Props) {
   const [note, setNote] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [step, setStep] = useState<'input' | 'cropping' | 'star'>('input');
@@ -96,11 +97,22 @@ export default function DiaryEntry({ onComplete }: Props) {
     }
   };
 
+  // 星の位置が決まったらデータを親に返す
+  const handleStarComplete = (x: number, y: number) => {
+    if (previewUrl) {
+      onComplete({
+        photoUrl: previewUrl,
+        memo: note,
+        starPosition: { x, y }
+      });
+    }
+  };
+
   if (step === 'star' && previewUrl) {
     return (
       <StarPlacer 
         photoUrl={previewUrl} 
-        onComplete={onComplete} 
+        onComplete={handleStarComplete} 
         onBack={() => setStep('input')} 
       />
     );
@@ -162,6 +174,17 @@ export default function DiaryEntry({ onComplete }: Props) {
 
   return (
     <div style={{ padding: '20px' }}>
+      {/* 戻るボタン */}
+      <button
+        onClick={onCancel}
+        style={{
+          background: 'none', border: 'none', fontSize: '1rem',
+          cursor: 'pointer', marginBottom: '10px', color: '#666'
+        }}
+      >
+        ← 戻る
+      </button>
+      
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <label style={{ 
           display: 'block', padding: '10px', border: '2px dashed #ccc', 
