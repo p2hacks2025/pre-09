@@ -1,5 +1,61 @@
-import { useState, type ChangeEvent } from 'react';
+'use client';
+
+import { useState, useCallback, type ChangeEvent } from 'react';
 import StarPlacer from '../StarPlacer/StarPlacer';
+import Cropper, { type Area } from 'react-easy-crop';
+
+
+// TypeScriptに「これはReactコンポーネントとして扱ってOK」と明示的に伝えます。
+const EasyCropper = Cropper as unknown as React.ComponentType<any>;
+
+// =================================================================
+// ユーティリティ関数
+// =================================================================
+
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.setAttribute('crossOrigin', 'anonymous'); 
+    image.src = url;
+  });
+
+async function getCroppedImg(
+  imageSrc: string,
+  pixelCrop: Area
+): Promise<string> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) return '';
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(URL.createObjectURL(blob));
+    }, 'image/jpeg');
+  });
+}
+
+// =================================================================
+// メインコンポーネント
+// =================================================================
 
 type Props = {
   onComplete: () => void;
@@ -8,34 +64,136 @@ type Props = {
 export default function DiaryEntry({ onComplete }: Props) {
   const [note, setNote] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [step, setStep] = useState<'input' | 'star'>('input');
+  const [step, setStep] = useState<'input' | 'cropping' | 'star'>('input');
+
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setPreviewUrl(URL.createObjectURL(file));
+    if (file) {
+      const imageDataUrl = URL.createObjectURL(file);
+      setImageSrc(imageDataUrl);
+      setStep('cropping');
+    }
+  };
+
+  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleCropConfirm = async () => {
+    if (imageSrc && croppedAreaPixels) {
+      try {
+        const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
+        setPreviewUrl(croppedImage);
+        setStep('input');
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   if (step === 'star' && previewUrl) {
-    return <StarPlacer photoUrl={previewUrl} note={note} onFinish={onComplete} />;
+    return (
+      <StarPlacer 
+        photoUrl={previewUrl} 
+        onComplete={onComplete} 
+        onBack={() => setStep('input')} 
+      />
+    );
+  }
+
+  if (step === 'cropping' && imageSrc) {
+    return (
+      <div style={{ 
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+        background: '#333', zIndex: 1000, display: 'flex', flexDirection: 'column' 
+      }}>
+        <div style={{ position: 'relative', flex: 1, width: '100%' }}>
+          {/* ✅ ここで再定義した EasyCropper を使います */}
+          <EasyCropper
+            image={imageSrc}
+            crop={crop}
+            zoom={zoom}
+            aspect={3 / 4}
+            onCropChange={setCrop}
+            onCropComplete={onCropComplete}
+            onZoomChange={setZoom}
+          />
+        </div>
+        
+        <div style={{ 
+          height: '100px', background: 'white', display: 'flex', 
+          alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '0 20px' 
+        }}>
+          <div style={{ position: 'absolute', bottom: '110px', width: '80%', display: 'flex', justifyContent: 'center' }}>
+             <input
+               type="range"
+               value={zoom}
+               min={1}
+               max={3}
+               step={0.1}
+               onChange={(e) => setZoom(Number(e.target.value))}
+               style={{ width: '100%', maxWidth: '300px' }}
+             />
+          </div>
+
+          <button 
+            onClick={() => { setStep('input'); setImageSrc(null); }} 
+            className="btn"
+            style={{ padding: '10px 20px', background: '#f0f0f0', borderRadius: '4px', border: '1px solid #ccc' }}
+          >
+            キャンセル
+          </button>
+          <button 
+            onClick={handleCropConfirm} 
+            className="btn btn-primary"
+            style={{ padding: '10px 20px', background: '#007bff', color: 'white', borderRadius: '4px', border: 'none' }}
+          >
+            決定する ✅
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-        <label style={{ display: 'block', padding: '20px', border: '2px dashed #ccc', cursor: 'pointer' }}>
-          {previewUrl ? <img src={previewUrl} style={{ maxWidth: '100%' }} /> : "📷 タップして写真を選ぶ"}
+        <label style={{ 
+          display: 'block', padding: '10px', border: '2px dashed #ccc', 
+          cursor: 'pointer', borderRadius: '8px', minHeight: '200px',
+          background: '#fafafa', position: 'relative'
+        }}>
+          {previewUrl ? (
+            <img src={previewUrl} style={{ maxWidth: '100%', display: 'block', margin: '0 auto' }} alt="Preview" />
+          ) : (
+             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>
+              📷 タップして写真を選ぶ
+            </div>
+          )}
           <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
         </label>
       </div>
+
       <textarea
-        style={{ width: '100%', height: '100px', padding: '10px', marginBottom: '20px' }}
+        style={{ width: '100%', height: '100px', padding: '10px', marginBottom: '20px', borderRadius: '4px', border: '1px solid #ccc' }}
         placeholder="ひとことメモ..."
         value={note}
         onChange={(e) => setNote(e.target.value)}
       />
+
       <button 
-        className="btn btn-primary" disabled={!previewUrl} onClick={() => setStep('star')}
-        style={{ width: '100%' }}
+        className="btn btn-primary" 
+        disabled={!previewUrl} 
+        onClick={() => setStep('star')}
+        style={{ 
+          width: '100%', padding: '12px', borderRadius: '4px', border: 'none',
+          background: previewUrl ? '#007bff' : '#ccc', color: 'white'
+        }}
       >
         次へ（星を決める） 👉
       </button>
