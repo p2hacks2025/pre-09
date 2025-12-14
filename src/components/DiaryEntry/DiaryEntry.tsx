@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, type ChangeEvent } from 'react';
+import { useState, useCallback, useEffect, useRef, type ChangeEvent } from 'react';
 import StarPlacer from '../StarPlacer/StarPlacer';
 import Cropper, { type Area } from 'react-easy-crop';
 
@@ -72,10 +72,28 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
+  // Object URLを追跡してクリーンアップ
+  const objectUrlsRef = useRef<string[]>([]);
+
+  // コンポーネントのアンマウント時にすべてのObject URLを解放
+  useEffect(() => {
+    return () => {
+      objectUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      objectUrlsRef.current = [];
+    };
+  }, []);
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // 古いimageSrcがあれば解放
+      if (imageSrc) {
+        URL.revokeObjectURL(imageSrc);
+      }
       const imageDataUrl = URL.createObjectURL(file);
+      objectUrlsRef.current.push(imageDataUrl);
       setImageSrc(imageDataUrl);
       setStep('cropping');
     }
@@ -88,7 +106,12 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
   const handleCropConfirm = async () => {
     if (imageSrc && croppedAreaPixels) {
       try {
+        // 古いpreviewUrlがあれば解放
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
         const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
+        objectUrlsRef.current.push(croppedImage);
         setPreviewUrl(croppedImage);
         setStep('input');
       } catch (e) {

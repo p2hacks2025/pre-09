@@ -123,6 +123,19 @@ export function ConstellationCreator({
       // 星の描画順をキャッシュ
       const starDrawOrderCache = new Map<number, number>();
 
+      // クリーンアップ用にバッファを追跡
+      p.remove = ((originalRemove) => {
+        return function(this: p5) {
+          // p5.Graphicsバッファを明示的に解放
+          if (bgBuffer) {
+            bgBuffer.remove();
+            bgBuffer = null;
+          }
+          // 元のremoveを呼び出し
+          originalRemove.call(this);
+        };
+      })(p.remove.bind(p));
+
       p.setup = () => {
         p.createCanvas(width, height);
         // 高DPIディスプレイでの最適化（必要に応じて調整）
