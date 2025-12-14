@@ -3,19 +3,16 @@ import type { AppView, DiaryEntry, Constellation } from './types';
 import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations } from './lib/db';
 import './App.css';
 
+// 👇【重要】ここが変わっています！作った部品を読み込む行です
+import DiaryEntryComponent from './components/DiaryEntry/DiaryEntry';
+
 function App() {
-  // 現在の画面
   const [view, setView] = useState<AppView>('home');
-  
-  // データ状態
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [unassignedEntries, setUnassignedEntries] = useState<DiaryEntry[]>([]);
   const [constellations, setConstellations] = useState<Constellation[]>([]);
-  
-  // 選択中の星座ID
   const [selectedConstellationId, setSelectedConstellationId] = useState<number | null>(null);
 
-  // データの読み込み
   const loadData = async () => {
     const [allEntries, unassigned, allConstellations] = await Promise.all([
       getAllDiaryEntries(),
@@ -31,7 +28,6 @@ function App() {
     loadData();
   }, []);
 
-  // 星座が完成可能かどうか（7日分の記録がある）
   const canCreateConstellation = unassignedEntries.length >= 7;
 
   // ホーム画面
@@ -79,7 +75,6 @@ function App() {
         )}
       </div>
 
-      {/* 直近の記録プレビュー */}
       {unassignedEntries.length > 0 && (
         <div className="recent-entries">
           <h2>最近の記録</h2>
@@ -95,7 +90,7 @@ function App() {
     </div>
   );
 
-  // 日記入力画面（プレースホルダー）
+  // 日記入力画面
   const renderEntry = () => (
     <div className="entry-page">
       <header className="page-header">
@@ -105,11 +100,15 @@ function App() {
         <h1>今日の記録</h1>
       </header>
       <div className="entry-form">
-        <p>📷 写真を選択して、ひとことメモを書きましょう</p>
-        {/* TODO: DiaryEntry コンポーネントを配置 */}
-        <p className="placeholder-text">
-          （DiaryEntry コンポーネント実装予定）
-        </p>
+        
+        {/* 👇【重要】ここが変わっています！文字ではなく部品を表示します */}
+        <DiaryEntryComponent 
+          onComplete={() => {
+            loadData(); // データを再読込して
+            setView('home'); // ホームに戻る
+          }}
+        />
+
       </div>
     </div>
   );
@@ -125,7 +124,6 @@ function App() {
       </header>
       <div className="constellation-canvas">
         <p>⭐ 7つの星をつないで星座を作りましょう</p>
-        {/* TODO: ConstellationCanvas コンポーネントを配置 */}
         <p className="placeholder-text">
           （ConstellationCanvas コンポーネント実装予定）
         </p>
