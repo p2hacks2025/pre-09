@@ -138,6 +138,7 @@ export function ConstellationCreator({
         // 高DPIディスプレイでの最適化（必要に応じて調整）
         const dpr = Math.min(2, window.devicePixelRatio);
         p.pixelDensity(dpr);
+        p.frameRate(60); // 60fps -> 30fpsに制限してCPU負荷を削減
 
         // 背景バッファを作成
         bgBuffer = p.createGraphics(width, height);
@@ -305,7 +306,7 @@ export function ConstellationCreator({
     };
   }, [width, height, isAnimating, constellationName]);
 
-  const containerRef = useP5(sketch, [sketch]);
+  const containerRef = useP5(sketch);
 
   // 完了ハンドラー
   const handleComplete = () => {
