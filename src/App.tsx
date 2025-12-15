@@ -219,11 +219,23 @@ function App() {
   // 星クリック時のハンドラー
   // ============================================
   const handleStarClick = (entryId: number) => {
+    console.log('handleStarClick called with entryId:', entryId);
+    console.log('探しているID:', entryId, typeof entryId);
+    console.log('持っているリストのIDたち:', entries.map(e => ({ id: e.id, type: typeof e.id })));
     const entry = entries.find(e => e.id === entryId);
+    console.log('handleStarClick found entry:', entry);
     if (entry) {
       setSelectedEntry(entry);
+      console.log('handleStarClick: setSelectedEntry called for', entryId);
+    } else {
+      console.log('handleStarClick: no entry found for', entryId);
     }
   };
+
+  // デバッグ: selectedEntry が更新されたタイミングをログ出力
+  useEffect(() => {
+    console.log('selectedEntry changed:', selectedEntry);
+  }, [selectedEntry]);
 
   // ============================================
   // Layer 3: UIOverlay のレンダリング

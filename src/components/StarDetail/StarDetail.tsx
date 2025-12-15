@@ -58,7 +58,7 @@ export default function StarDetail({ entry, onClose }: Props) {//引数はprops�
         )}
 
         <p style={{ marginTop: '15px', color: '#444', lineHeight: '1.6' }}>
-            {entry.memo || "（メモはありません）"}
+            {entry.memo || "（メモはありません）"}{/*メモがなければ表示される文章*/}
         </p>
       </div>
     </div>
