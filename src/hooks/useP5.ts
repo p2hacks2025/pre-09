@@ -11,22 +11,28 @@ export type Sketch = (p: p5) => void;
  * p5.js を React で使うためのカスタムフック
  * 
  * @param sketch - p5.js のスケッチ関数（インスタンスモード）
- * @param deps - スケッチを再生成するための依存配列
  * @returns コンテナ要素に設定する ref
+ * 
+ * 注意: このフックは sketch を一度だけ使用してp5インスタンスを作成します。
+ * sketch 内で変化する値を参照する場合は、useRef を使用してください。
  * 
  * @example
  * ```tsx
  * const MyCanvas = () => {
- *   const sketch: Sketch = (p) => {
+ *   const valueRef = useRef(someValue);
+ *   useEffect(() => { valueRef.current = someValue; }, [someValue]);
+ * 
+ *   const sketch: Sketch = useMemo(() => (p) => {
  *     p.setup = () => {
  *       p.createCanvas(400, 400);
  *     };
  *     p.draw = () => {
  *       p.background(0);
  *       p.fill(255);
- *       p.ellipse(p.mouseX, p.mouseY, 50, 50);
+ *       // valueRef.current で最新の値を参照
+ *       p.ellipse(p.mouseX, p.mouseY, valueRef.current, valueRef.current);
  *     };
- *   };
+ *   }, []); // 依存配列は空にする
  * 
  *   const containerRef = useP5(sketch);
  * 
@@ -34,13 +40,23 @@ export type Sketch = (p: p5) => void;
  * };
  * ```
  */
-export function useP5(sketch: Sketch, deps: React.DependencyList = []): React.RefObject<HTMLDivElement | null> {
+export function useP5(sketch: Sketch): React.RefObject<HTMLDivElement | null> {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const p5InstanceRef = useRef<p5 | null>(null);
+  const sketchRef = useRef(sketch);
+  const isInitializedRef = useRef(false);
+
+  // sketch を常に最新に保つ（ただし再作成はしない）
+  sketchRef.current = sketch;
 
   useEffect(() => {
     // コンテナが存在しない場合は何もしない
     if (!containerRef.current) return;
+    
+    // 既に初期化済みの場合はスキップ（StrictMode対策）
+    if (isInitializedRef.current && p5InstanceRef.current) {
+      return;
+    }
 
     // 既存のインスタンスがあれば削除
     if (p5InstanceRef.current) {
@@ -49,7 +65,8 @@ export function useP5(sketch: Sketch, deps: React.DependencyList = []): React.Re
     }
 
     // 新しい p5 インスタンスを作成
-    p5InstanceRef.current = new p5(sketch, containerRef.current);
+    p5InstanceRef.current = new p5(sketchRef.current, containerRef.current);
+    isInitializedRef.current = true;
 
     // クリーンアップ
     return () => {
@@ -57,9 +74,9 @@ export function useP5(sketch: Sketch, deps: React.DependencyList = []): React.Re
         p5InstanceRef.current.remove();
         p5InstanceRef.current = null;
       }
+      isInitializedRef.current = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, []); // 依存配列を空にして、マウント時に一度だけ実行
 
   return containerRef;
 }
