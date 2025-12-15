@@ -126,6 +126,9 @@ function App() {
       });
     });
     setCanvasLines(lines);
+
+    // リロード時は作成中の星座（未割り当てエントリのグループ）から表示開始
+    setCurrentConstellationIndex(allConstellations.length);
   }, []);
 
   useEffect(() => {
