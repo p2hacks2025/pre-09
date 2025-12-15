@@ -86,11 +86,16 @@ export function ConstellationCanvas({
   const debugModeRef = useRef(debugMode);
   const constellationWidthRef = useRef(constellationWidth);
   const constellationCountRef = useRef(constellationCount);
+  const nameRef = useRef(name);
 
   // ref を更新（再レンダリングせずに値を更新）
   useEffect(() => {
     starsRef.current = stars;
   }, [stars]);
+
+  useEffect(() => {
+    nameRef.current = name;
+  }, [name]);
 
   useEffect(() => {
     linesRef.current = lines;
@@ -123,7 +128,10 @@ export function ConstellationCanvas({
       const CLICK_RADIUS = 20;
 
       // 背景の小さな星（装飾用）
-      const bgStars: { x: number; y: number; size: number; twinkle: number }[] = [];
+      const bgStars: { x: number; y: number; size: number; twinkle: number; phase: number }[] = [];
+
+      // デバッグモード用のキャッシュ文字列
+      const debugTextCache: Map<string, string> = new Map();
 
       // パーティクルシステム
       const particles: Particle[] = [];
@@ -145,6 +153,7 @@ export function ConstellationCanvas({
             y: p.random(height),
             size: p.random(0.5, 2.5),
             twinkle: p.random(1000, 4000),
+            phase: p.random(p.TWO_PI), // 初期位相をランダムに
           });
         }
       };
@@ -175,6 +184,11 @@ export function ConstellationCanvas({
             [255, 100, 255, 40],  // マゼンタ
           ];
 
+          // 星の描画領域（padding考慮）- 共通定数から取得
+          const padding = CANVAS_CONSTANTS.PADDING;
+          const starAreaWidth = CANVAS_CONSTANTS.STAR_AREA_WIDTH;
+          const starAreaHeight = CANVAS_CONSTANTS.STAR_AREA_HEIGHT;
+
           // 星座ごとの領域を描画
           for (let i = 0; i < constCount + 1; i++) { // +1 for unassigned
             const color = colors[i % colors.length];
@@ -191,39 +205,47 @@ export function ConstellationCanvas({
             p.line(x, 0, x, height);
             p.line(x + constWidth, 0, x + constWidth, height);
 
-            // ラベル
+            // ラベル（キャッシュを使用）
             p.fill(255, 255, 255, 200);
             p.noStroke();
             p.textSize(14);
             p.textAlign(p.LEFT, p.TOP);
-            p.text(`星座 ${i + 1}`, x + 10, 10);
+            
+            // キャッシュキーを使って文字列を取得/作成
+            const labelKey = `label_${i}`;
+            if (!debugTextCache.has(labelKey)) {
+              debugTextCache.set(labelKey, `星座 ${i + 1}`);
+            }
+            p.text(debugTextCache.get(labelKey)!, x + 10, 10);
+            
             p.textSize(10);
-            p.text(`x: ${x} - ${x + constWidth}`, x + 10, 30);
+            const rangeKey = `range_${i}_${constWidth}`;
+            if (!debugTextCache.has(rangeKey)) {
+              debugTextCache.set(rangeKey, `x: ${x} - ${x + constWidth}`);
+            }
+            p.text(debugTextCache.get(rangeKey)!, x + 10, 30);
 
-            // 星の描画領域（padding考慮）- 共通定数から取得
-            const padding = CANVAS_CONSTANTS.PADDING;
-            const starAreaWidth = CANVAS_CONSTANTS.STAR_AREA_WIDTH;
-            const starAreaHeight = CANVAS_CONSTANTS.STAR_AREA_HEIGHT;
             p.stroke(255, 255, 0, 100);
             p.strokeWeight(1);
             p.noFill();
             p.rect(x + padding, padding, starAreaWidth, starAreaHeight);
             p.fill(255, 255, 0, 150);
             p.textSize(10);
-            p.text(`星描画領域 (${starAreaWidth}x${starAreaHeight})`, x + padding + 5, padding + 5);
+            const areaKey = `area_${starAreaWidth}_${starAreaHeight}`;
+            if (!debugTextCache.has(areaKey)) {
+              debugTextCache.set(areaKey, `星描画領域 (${starAreaWidth}x${starAreaHeight})`);
+            }
+            p.text(debugTextCache.get(areaKey)!, x + padding + 5, padding + 5);
           }
         }
 
         // 装飾用の小さな星を描画（瞬き効果）
         p.noStroke();
-        for (const bgStar of bgStars) {
-          const alpha = p.map(
-            p.sin((p.millis() / bgStar.twinkle) * p.TWO_PI),
-            -1,
-            1,
-            80,
-            255
-          );
+        const frameCount = p.frameCount;
+        for (let i = 0; i < bgStars.length; i++) {
+          const bgStar = bgStars[i];
+          // frameCountを使用して計算（millis()より軽量）
+          const alpha = 80 + 87.5 * (1 + Math.sin(bgStar.phase + frameCount * 0.05 / (bgStar.twinkle / 1000)));
           p.fill(255, 255, 255, alpha);
           p.ellipse(bgStar.x, bgStar.y, bgStar.size);
         }
@@ -307,12 +329,13 @@ export function ConstellationCanvas({
         }
 
         // 星座名を描画（固定位置）
-        if (name) {
+        const currentName = nameRef.current;
+        if (currentName) {
           p.fill(255, 255, 255, 200);
           p.noStroke();
           p.textAlign(p.CENTER, p.BOTTOM);
           p.textSize(16);
-          p.text(name, width / 2, height - 20);
+          p.text(currentName, width / 2, height - 20);
         }
       };
 
@@ -362,10 +385,10 @@ export function ConstellationCanvas({
         }
       };
     };
-  }, [width, height, onStarClick, backgroundColor, starColor, lineColor, name]);
+  }, [width, height, onStarClick, backgroundColor, starColor, lineColor]);
 
   // p5.js の ref を取得
-  const containerRef = useP5(sketch, [sketch]);
+  const containerRef = useP5(sketch);
 
   return (
     <div className="constellation-canvas-container">
