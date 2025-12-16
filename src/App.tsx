@@ -45,6 +45,14 @@ function App() {
   // 星座1つあたりの幅（px）- 共通定数を使用
   const CONSTELLATION_WIDTH = CANVAS_CONSTANTS.CONSTELLATION_WIDTH;
 
+  // ----- カメラオフセット（イージング付き） -----
+  const [cameraOffset, setCameraOffset] = useState(() => {
+    const initialCenterOffset = windowWidth / 2 - CONSTELLATION_WIDTH / 2;
+    return initialCenterOffset;
+  });
+  const cameraOffsetRef = useRef(cameraOffset);
+  const animationFrameRef = useRef<number | null>(null);
+
   // ----- 新しい星エフェクト -----
   const [newStarEffect, setNewStarEffect] = useState<NewStarEffect | null>(null);
 
@@ -63,7 +71,61 @@ function App() {
   // 現在のカメラオフセットを計算（星座を画面中央に配置）
   // 星座の中心を画面中央に合わせる: 画面幅の半分 - 星座の中心位置
   const centerOffset = windowWidth / 2 - CONSTELLATION_WIDTH / 2;
-  const currentCameraOffset = -currentConstellationIndex * CONSTELLATION_WIDTH + dragDelta + centerOffset;
+  const targetCameraOffset = -currentConstellationIndex * CONSTELLATION_WIDTH + centerOffset;
+
+  // カメラオフセットをなめらかに補間
+  const cancelCameraAnimation = () => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    cameraOffsetRef.current = cameraOffset;
+  }, [cameraOffset]);
+
+  useEffect(() => {
+    const target = isDragging ? targetCameraOffset + dragDelta : targetCameraOffset;
+
+    if (isDragging) {
+      cancelCameraAnimation();
+      setCameraOffset(target);
+      return;
+    }
+
+    if (Math.abs(target - cameraOffsetRef.current) < 0.5) {
+      cancelCameraAnimation();
+      setCameraOffset(target);
+      return;
+    }
+
+    const from = cameraOffsetRef.current;
+    const duration = 500;
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    let start: number | null = null;
+
+    const step = (timestamp: number) => {
+      if (start === null) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const eased = easeOutCubic(progress);
+      const nextOffset = from + (target - from) * eased;
+      setCameraOffset(nextOffset);
+
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(step);
+      } else {
+        animationFrameRef.current = null;
+      }
+    };
+
+    cancelCameraAnimation();
+    animationFrameRef.current = requestAnimationFrame(step);
+
+    return cancelCameraAnimation;
+  }, [dragDelta, isDragging, targetCameraOffset]);
+
+  useEffect(() => () => cancelCameraAnimation(), []);
 
   // データの読み込み
   const loadData = useCallback(async () => {
@@ -319,7 +381,7 @@ function App() {
             <div className="debug-info">
               <p>星座数: {constellations.length} | 未割当: {unassignedEntries.length}</p>
               <p>現在Index: {currentConstellationIndex} | 幅: {CONSTELLATION_WIDTH}px</p>
-              <p>カメラOffset: {currentCameraOffset}px</p>
+              <p>カメラOffset: {cameraOffset.toFixed(1)}px</p>
             </div>
             <div className="debug-buttons">
               <button onClick={handleCreateTestData}>🧪 テストデータ作成</button>
@@ -400,7 +462,7 @@ function App() {
         <ConstellationCanvas
           stars={canvasStars}
           lines={canvasLines}
-          cameraOffset={currentCameraOffset}
+          cameraOffset={cameraOffset}
           newStarEffect={newStarEffect}
           onStarClick={handleStarClick}
           width={window.innerWidth}
