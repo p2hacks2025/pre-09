@@ -58,16 +58,19 @@ async function getCroppedImg(
 // メインコンポーネント
 // =================================================================
 
+//onCompleteとonCancelの引数を定義
 type Props = {
   onComplete: (data: { photoUrl: string; memo: string; starPosition: { x: number; y: number } }) => void;
   onCancel: () => void;
 };
 
 export default function DiaryEntry({ onComplete, onCancel }: Props) {
+  // noteをSetnoteで管理
   const [note, setNote] = useState("");
+  // 画像のプレビューurl
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [step, setStep] = useState<'input' | 'cropping' | 'star'>('input');
 
+  const [step, setStep] = useState<'input' | 'cropping' | 'star'>('input');
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);

@@ -5,6 +5,8 @@ import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations, addDiar
 import ConstellationCanvas from './components/ConstellationCanvas/ConstellationCanvas';
 import ConstellationCreator from './components/ConstellationCreator/ConstellationCreator';
 import DiaryEntryComponent from './components/DiaryEntry/DiaryEntry';
+import StarDetail from './components/StarDetail/StarDetail';
+
 import './App.css';
 
 // ============================================
@@ -45,6 +47,9 @@ function App() {
 
   // ----- 新しい星エフェクト -----
   const [newStarEffect, setNewStarEffect] = useState<NewStarEffect | null>(null);
+
+  //-----選択中の星野データがここに入る-----
+  const [selectedEntry, setSelectedEntry] = useState<DiaryEntryType | null>(null);
 
   // ----- Canvas用の星データ -----
   const [canvasStars, setCanvasStars] = useState<Star[]>([]);
@@ -214,12 +219,23 @@ function App() {
   // 星クリック時のハンドラー
   // ============================================
   const handleStarClick = (entryId: number) => {
+    console.log('handleStarClick called with entryId:', entryId);
+    console.log('探しているID:', entryId, typeof entryId);
+    console.log('持っているリストのIDたち:', entries.map(e => ({ id: e.id, type: typeof e.id })));
     const entry = entries.find(e => e.id === entryId);
+    console.log('handleStarClick found entry:', entry);
     if (entry) {
-      // TODO: StarDetailモーダルを表示
-      console.log('Star clicked:', entry);
+      setSelectedEntry(entry);
+      console.log('handleStarClick: setSelectedEntry called for', entryId);
+    } else {
+      console.log('handleStarClick: no entry found for', entryId);
     }
   };
+
+  // デバッグ: selectedEntry が更新されたタイミングをログ出力
+  useEffect(() => {
+    console.log('selectedEntry changed:', selectedEntry);
+  }, [selectedEntry]);
 
   // ============================================
   // Layer 3: UIOverlay のレンダリング
@@ -398,6 +414,12 @@ function App() {
       {/* Layer 2: UIOverlay */}
       <div className="layer-ui">
         {renderUIOverlay()}
+        {selectedEntry && (
+          <StarDetail 
+            entry={selectedEntry} 
+            onClose={() => setSelectedEntry(null)} 
+          />
+        )}
       </div>
     </div>
   );

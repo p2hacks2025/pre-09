@@ -87,7 +87,8 @@ export function ConstellationCanvas({
   const constellationWidthRef = useRef(constellationWidth);
   const constellationCountRef = useRef(constellationCount);
   const nameRef = useRef(name);
-
+  //追加したよ
+  const latestOnStarClick = useRef(onStarClick);
   // ref を更新（再レンダリングせずに値を更新）
   useEffect(() => {
     starsRef.current = stars;
@@ -116,6 +117,11 @@ export function ConstellationCanvas({
   useEffect(() => {
     constellationWidthRef.current = constellationWidth;
   }, [constellationWidth]);
+
+  //追加した２
+  useEffect(() => {
+    latestOnStarClick.current = onStarClick;
+  }, [onStarClick]);
 
   useEffect(() => {
     constellationCountRef.current = constellationCount;
@@ -361,7 +367,9 @@ export function ConstellationCanvas({
 
       // クリックイベント
       p.mousePressed = () => {
-        if (!onStarClick) return;
+        //変更を加えたよ３
+        const handleStarClick = latestOnStarClick.current;
+        if (!handleStarClick) return;
 
         const currentCameraOffset = cameraOffsetRef.current;
         const currentStars = starsRef.current;
@@ -379,7 +387,9 @@ export function ConstellationCanvas({
         for (const star of currentStars) {
           const d = p.dist(worldX, worldY, star.x, star.y);
           if (d < CLICK_RADIUS) {
-            onStarClick(star.entryId);
+            //変更を加えた４
+            handleStarClick(star.entryId);
+            console.log(`star ${star.entryId} 番目の星が選ばれました`);
             break;
           }
         }
