@@ -147,10 +147,19 @@ export function ConstellationCanvas({
       let flashX = 0;
       let flashY = 0;
       let lastEffectTimestamp = 0;
+      let backgroundGradient: CanvasGradient | null = null;
 
       p.setup = () => {
         p.createCanvas(width, height);
         p.pixelDensity(Math.min(2, window.devicePixelRatio));
+
+        // 背景グラデーションを生成（上から下へ）
+        const ctx = p.drawingContext as CanvasRenderingContext2D;
+        backgroundGradient = ctx.createLinearGradient(0, 0, 0, height);
+        backgroundGradient.addColorStop(0, '#0b0044ff');
+        backgroundGradient.addColorStop(0.4, '#1e0042ff');
+        backgroundGradient.addColorStop(0.7, '#351a54ff');
+        backgroundGradient.addColorStop(1, '#5a3766');
 
         // 背景の装飾用小星を生成（広範囲に配置）
         for (let i = 0; i < 200; i++) {
@@ -173,8 +182,12 @@ export function ConstellationCanvas({
         const constWidth = constellationWidthRef.current;
         const constCount = constellationCountRef.current;
 
-        // 背景
-        p.background(backgroundColor);
+        // 背景（紫系のグラデーション）
+        const ctx = p.drawingContext as CanvasRenderingContext2D;
+        ctx.save();
+        ctx.fillStyle = backgroundGradient ?? backgroundColor;
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
 
         // カメラ変換を適用
         p.push();
@@ -191,7 +204,8 @@ export function ConstellationCanvas({
           ];
 
           // 星の描画領域（padding考慮）- 共通定数から取得
-          const padding = CANVAS_CONSTANTS.PADDING;
+          const paddingX = CANVAS_CONSTANTS.PADDING_X;
+          const paddingTop = CANVAS_CONSTANTS.PADDING_Y_TOP;
           const starAreaWidth = CANVAS_CONSTANTS.STAR_AREA_WIDTH;
           const starAreaHeight = CANVAS_CONSTANTS.STAR_AREA_HEIGHT;
 
@@ -234,14 +248,14 @@ export function ConstellationCanvas({
             p.stroke(255, 255, 0, 100);
             p.strokeWeight(1);
             p.noFill();
-            p.rect(x + padding, padding, starAreaWidth, starAreaHeight);
+            p.rect(x + paddingX, paddingTop, starAreaWidth, starAreaHeight);
             p.fill(255, 255, 0, 150);
             p.textSize(10);
             const areaKey = `area_${starAreaWidth}_${starAreaHeight}`;
             if (!debugTextCache.has(areaKey)) {
               debugTextCache.set(areaKey, `星描画領域 (${starAreaWidth}x${starAreaHeight})`);
             }
-            p.text(debugTextCache.get(areaKey)!, x + padding + 5, padding + 5);
+            p.text(debugTextCache.get(areaKey)!, x + paddingX + 5, paddingTop + 5);
           }
         }
 

@@ -15,7 +15,7 @@ html, body, #root {
 }
 
 body {
-  font-family: sans-serif;
+  font-family: "MainFont", sans-serif;
   background-color: #0a0a20;
   color: #ffffff;
 }
