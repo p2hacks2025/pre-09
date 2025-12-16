@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { AppView, DiaryEntry as DiaryEntryType, Constellation, Star, StarPosition, ConstellationLine } from './types';
 import { CANVAS_CONSTANTS } from './types';
 import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations, addDiaryEntry, createConstellation, resetAllData, createTestData } from './lib/db';
@@ -64,6 +64,43 @@ function App() {
 
   // ----- 星座の線データ -----
   const [canvasLines, setCanvasLines] = useState<ConstellationLine[]>([]);
+
+  // DiaryEntry を ID で引けるようにマッピング
+  const entryById = useMemo(() => {
+    const map = new Map<number, DiaryEntryType>();
+    entries.forEach((entry) => {
+      if (entry.id !== undefined) map.set(entry.id, entry);
+    });
+    return map;
+  }, [entries]);
+
+  const getDateRangeForIndex = useCallback(
+    (index: number) => {
+      const groupEntries: DiaryEntryType[] = [];
+
+      if (index < constellations.length) {
+        const entryIds = constellations[index]?.entryIds ?? [];
+        entryIds.forEach((id) => {
+          const entry = entryById.get(id);
+          if (entry) groupEntries.push(entry);
+        });
+      } else if (index === constellations.length) {
+        groupEntries.push(...unassignedEntries);
+      }
+
+      if (groupEntries.length === 0) return '';
+
+      const sortedDates = groupEntries
+        .map((entry) => entry.date)
+        .sort();
+
+      const formatDate = (date: string) => date.replace(/-/g, '/');
+      const start = formatDate(sortedDates[0]);
+      const end = formatDate(sortedDates[sortedDates.length - 1]);
+      return start === end ? start : `${start} ~ ${end}`;
+    },
+    [constellations, entryById, unassignedEntries]
+  );
 
   // 星座の総数（未割り当てエントリも1グループとしてカウント）
   const totalConstellationGroups = constellations.length + (unassignedEntries.length > 0 ? 1 : 0);
@@ -319,6 +356,8 @@ function App() {
   const renderHomeUI = () => {
     const canCreateConstellation = unassignedEntries.length >= 7;
 
+    const currentDateRange = getDateRangeForIndex(currentConstellationIndex);
+
     // 現在表示中の星座名を取得
     const currentConstellationName = constellations[currentConstellationIndex]?.name 
       || (currentConstellationIndex === constellations.length && unassignedEntries.length > 0 
@@ -343,7 +382,7 @@ function App() {
       <div className="ui-home">
         {/* 上部: タイトルと星座インジケーター */}
         <div className="home-header">
-          <h1>Home</h1>
+          <h1 className="constellation-date-range">{currentDateRange || '記録なし'}</h1>
           {totalConstellationGroups > 0 && (
             <div className="constellation-indicator">
               <span className="constellation-name">{currentConstellationName}</span>

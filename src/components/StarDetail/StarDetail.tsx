@@ -24,9 +24,9 @@ export default function StarDetail({ entry, onClose }: Props) {//引数はprops�
         zIndex: 2000,
       }}
     >
-      {/* 黒い幕の上の白いボード */}
+      {/* 黒い幕の上のボード */}
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: '#2e2e2eb5',
         borderRadius: '16px',
         padding: '24px',
         maxWidth: '350px',

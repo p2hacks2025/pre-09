@@ -201,6 +201,12 @@ export async function createTestData(): Promise<void> {
     { type: 'image/png' }
   );
 
+  const formatDate = (year: number, month: number, day: number) => {
+    const mm = String(month).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    return `${year}-${mm}-${dd}`;
+  };
+
   // 星座1: 「希望の星」（7つの星）
   const constellation1Entries: number[] = [];
   const positions1 = [
@@ -214,14 +220,14 @@ export async function createTestData(): Promise<void> {
   ];
   for (let i = 0; i < 7; i++) {
     const id = await addDiaryEntry(
-      `2025-12-0${i + 1}`,
+      formatDate(2025, 12, i + 1),
       dummyBlob,
       `テストメモ 星座1-${i + 1}`,
       positions1[i]
     );
     constellation1Entries.push(id);
   }
-  await createConstellation('希望の星', constellation1Entries, [
+  await createConstellation('星のカービィ', constellation1Entries, [
     { fromIndex: 0, toIndex: 1 },
     { fromIndex: 1, toIndex: 2 },
     { fromIndex: 2, toIndex: 3 },
@@ -243,14 +249,14 @@ export async function createTestData(): Promise<void> {
   ];
   for (let i = 0; i < 7; i++) {
     const id = await addDiaryEntry(
-      `2025-12-0${i + 8}`,
+      formatDate(2025, 12, i + 8),
       dummyBlob,
       `テストメモ 星座2-${i + 1}`,
       positions2[i]
     );
     constellation2Entries.push(id);
   }
-  await createConstellation('夢の軌跡', constellation2Entries, [
+  await createConstellation('おうし座', constellation2Entries, [
     { fromIndex: 0, toIndex: 1 },
     { fromIndex: 1, toIndex: 2 },
     { fromIndex: 2, toIndex: 3 },
@@ -272,14 +278,14 @@ export async function createTestData(): Promise<void> {
   ];
   for (let i = 0; i < 7; i++) {
     const id = await addDiaryEntry(
-      `2025-12-${15 + i}`,
+      formatDate(2025, 12, 15 + i),
       dummyBlob,
       `テストメモ 星座3-${i + 1}`,
       positions3[i]
     );
     constellation3Entries.push(id);
   }
-  await createConstellation('キラキラ', constellation3Entries, [
+  await createConstellation('星野リゾート', constellation3Entries, [
     { fromIndex: 0, toIndex: 1 },
     { fromIndex: 0, toIndex: 2 },
     { fromIndex: 1, toIndex: 3 },
@@ -297,7 +303,7 @@ export async function createTestData(): Promise<void> {
   ];
   for (let i = 0; i < 4; i++) {
     await addDiaryEntry(
-      `2025-12-${22 + i}`,
+      formatDate(2025, 12, 22 + i),
       dummyBlob,
       `未割り当てテストメモ ${i + 1}`,
       unassignedPositions[i]
