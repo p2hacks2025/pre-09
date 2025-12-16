@@ -209,7 +209,7 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
           cursor: 'pointer', marginBottom: '10px', color: '#666'
         }}
       >
-        ← 戻る
+        ← もどる
       </button>
       
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>

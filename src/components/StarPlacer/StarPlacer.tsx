@@ -76,7 +76,7 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
           className="btn btn-outline"
           style={{ flex: 1 }}
         >
-          戻る
+          もどる
         </button>
         <button 
           onClick={handleConfirm} disabled={!starPos} className="btn btn-primary"
