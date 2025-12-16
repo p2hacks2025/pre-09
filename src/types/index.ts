@@ -13,10 +13,14 @@
 export const CANVAS_CONSTANTS = {
   /** 星座1つあたりの全体幅 */
   CONSTELLATION_WIDTH: 400,
-  /** 星座1つあたりの全体高さ（PADDING * 2 + STAR_AREA_HEIGHT） */
-  CONSTELLATION_HEIGHT: 300,
-  /** 星描画領域のパディング */
-  PADDING: 50,
+  /** 星座1つあたりの全体高さ（PADDING_Y_TOP + PADDING_Y_BOTTOM + STAR_AREA_HEIGHT） */
+  CONSTELLATION_HEIGHT: 610,
+  /** 左右のパディング */
+  PADDING_X: 50,
+  /** 上側パディング（星エリア上の余白を多めに確保） */
+  PADDING_Y_TOP: 160,
+  /** 下側パディング */
+  PADDING_Y_BOTTOM: 50,
   /** 星描画領域の幅（写真と一致） */
   STAR_AREA_WIDTH: 300,
   /** 星描画領域の高さ（写真と一致）- 3:4比率 */

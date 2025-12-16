@@ -15,7 +15,7 @@ html, body, #root {
 }
 
 body {
-  font-family: sans-serif;
+  font-family: "MainFont", sans-serif;
   background-color: #0a0a20;
   color: #ffffff;
 }
@@ -100,6 +100,14 @@ body {
   pointer-events: auto;
 }
 
+.constellation-date-range {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(100, 150, 255, 0.4);
+}
+
 /* 中央エリア（星座表示、タッチ透過） */
 .home-center {
   flex: 1;
@@ -115,7 +123,7 @@ body {
 }
 
 .constellation-name {
-  font-size: 1.2rem;
+  font-size: 1.6rem;
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -235,7 +243,7 @@ body {
 }
 
 .btn-primary {
-  background: #667eea;
+  background: rgba(0, 0, 0, 0.405);
 }
 
 .btn-secondary {

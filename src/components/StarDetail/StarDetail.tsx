@@ -24,9 +24,9 @@ export default function StarDetail({ entry, onClose }: Props) {//引数はprops�
         zIndex: 2000,
       }}
     >
-      {/* 黒い幕の上の白いボード */}
+      {/* 黒い幕の上のボード */}
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: '#2e2e2eb5',
         borderRadius: '16px',
         padding: '24px',
         maxWidth: '350px',
@@ -46,7 +46,7 @@ export default function StarDetail({ entry, onClose }: Props) {//引数はprops�
 
         {/* 日付表示 */}
         <h3 style={{ marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-           📅 {new Date(entry.date).toLocaleDateString()}{/*日付データをわかりやすく変換 */}
+           {new Date(entry.date).toLocaleDateString()}{/*日付データをわかりやすく変換 */}
         </h3>
 
         {entry.photoBlob && (
@@ -57,7 +57,7 @@ export default function StarDetail({ entry, onClose }: Props) {//引数はprops�
           />
         )}
 
-        <p style={{ marginTop: '15px', color: '#444', lineHeight: '1.6' }}>
+        <p style={{ marginTop: '15px', color: '#ffffffbd', lineHeight: '1.6' }}>
             {entry.memo || "（メモはありません）"}{/*メモがなければ表示される文章*/}
         </p>
       </div>

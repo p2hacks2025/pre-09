@@ -152,7 +152,7 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
         background: '#333', zIndex: 1000, display: 'flex', flexDirection: 'column' 
       }}>
         <div style={{ position: 'relative', flex: 1, width: '100%' }}>
-          {/* ✅ ここで再定義した EasyCropper を使います */}
+          {/* ここで再定義した EasyCropper を使います */}
           <EasyCropper
             image={imageSrc}
             crop={crop}
@@ -192,7 +192,7 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
             className="btn btn-primary"
             style={{ padding: '10px 20px', background: '#007bff', color: 'white', borderRadius: '4px', border: 'none' }}
           >
-            決定する ✅
+            決定する
           </button>
         </div>
       </div>
@@ -209,7 +209,7 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
           cursor: 'pointer', marginBottom: '10px', color: '#666'
         }}
       >
-        ← 戻る
+        ← もどる
       </button>
       
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
@@ -229,7 +229,7 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
             <img src={previewUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="Preview" />
           ) : (
              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>
-              📷 タップして写真を選ぶ
+              タップして写真を選ぶ
             </div>
           )}
           <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
@@ -252,7 +252,7 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
           background: previewUrl ? '#007bff' : '#ccc', color: 'white'
         }}
       >
-        次へ（星を決める） 👉
+        次へ
       </button>
     </div>
   );
