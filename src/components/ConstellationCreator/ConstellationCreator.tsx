@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import type p5 from 'p5';
 import { useP5, type Sketch } from '../../hooks/useP5';
 import type { Star, ConstellationLine, DiaryEntry } from '../../types';
@@ -6,65 +6,28 @@ import { CANVAS_CONSTANTS } from '../../types';
 import './ConstellationCreator.css';
 
 interface ConstellationCreatorProps {
-  /** 星座に使用する日記エントリ（7件） */
   entries: DiaryEntry[];
-  /** 星座作成完了時のコールバック */
   onComplete: (name: string, lines: ConstellationLine[]) => void;
-  /** キャンセル時のコールバック */
   onCancel: () => void;
-  /** キャンバスの幅 */
   width?: number;
-  /** キャンバスの高さ */
   height?: number;
 }
 
-/**
- * 最近傍法で星を結ぶ線を自動生成する
- */
-function generateNearestNeighborLines(stars: Star[]): ConstellationLine[] {
-  if (stars.length < 2) return [];
-
+//順番に星をつなぐシンプルな線生成
+function generateDateOrderLines(stars: Star[]): ConstellationLine[] {
   const lines: ConstellationLine[] = [];
-  const visited = new Set<number>();
-  
-  // 最初の星から開始
-  let currentIndex = 0;
-  visited.add(currentIndex);
 
-  while (visited.size < stars.length) {
-    const current = stars[currentIndex];
-    let nearestIndex = -1;
-    let nearestDist = Infinity;
-
-    // 未訪問の星の中から最も近いものを探す
-    for (let i = 0; i < stars.length; i++) {
-      if (visited.has(i)) continue;
-      
-      const star = stars[i];
-      const dist = Math.sqrt(
-        Math.pow(star.x - current.x, 2) + Math.pow(star.y - current.y, 2)
-      );
-
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearestIndex = i;
-      }
-    }
-
-    if (nearestIndex !== -1) {
-      lines.push({ fromIndex: currentIndex, toIndex: nearestIndex });
-      visited.add(nearestIndex);
-      currentIndex = nearestIndex;
-    }
+  for (let i = 0; i < stars.length - 1; i++) {
+    lines.push({
+      fromIndex: i,
+      toIndex: i + 1,
+    });
   }
 
   return lines;
 }
 
-/**
- * 星座作成コンポーネント
- * 7つの星を最近傍法で自動的に線で結び、ユーザーが名前をつける
- */
+
 export function ConstellationCreator({
   entries,
   onComplete,
@@ -73,254 +36,88 @@ export function ConstellationCreator({
   height = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT,
 }: ConstellationCreatorProps) {
   const [constellationName, setConstellationName] = useState('');
-  const [isAnimating, setIsAnimating] = useState(true);
 
-  // エントリから星データを生成（CANVAS_CONSTANTSを使用して座標系を統一）
   const stars: Star[] = useMemo(() => {
-    return entries.map((entry) => {
-      const clampedMemoLength = Math.max(0, Math.min(entry.memo?.length ?? 0, 100));
-
-      return {
-        entryId: entry.id!,
-        x: entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH + CANVAS_CONSTANTS.PADDING_X,
-        y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP,
-        brightness: 200,
-        size: clampedMemoLength,
-      };
-    });
+    return entries.map((entry) => ({
+      entryId: entry.id!,
+      x: entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH + CANVAS_CONSTANTS.PADDING_X,
+      y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP,
+      brightness: 200,
+      size: 10,
+    }));
   }, [entries]);
 
-  // 最近傍法で線を自動生成
-  const lines = useMemo(() => generateNearestNeighborLines(stars), [stars]);
+  const lines = useMemo(() => generateDateOrderLines(stars), [stars]);
 
-  // アニメーション状態
-  const animationProgressRef = useRef(0);
-  const linesRef = useRef(lines);
-  const starsRef = useRef(stars);
-
-  useEffect(() => {
-    linesRef.current = lines;
-    starsRef.current = stars;
-  }, [lines, stars]);
-
-  // アニメーション完了フラグをrefで管理（不要な再レンダリングを防ぐ）
-  const hasAnimationCompletedRef = useRef(false);
-
-  // p5.js スケッチ
   const sketch: Sketch = useMemo(() => {
     return (p: p5) => {
-      // 背景の装飾用小星
-      const bgStars: { x: number; y: number; size: number; twinkle: number }[] = [];
-      
-      // 背景をオフスクリーンバッファにキャッシュ
-      let bgBuffer: p5.Graphics | null = null;
-      let lastBgUpdateTime = 0;
-      const BG_UPDATE_INTERVAL = 50; // 背景更新間隔（ms）
-      
-      // 線描画アニメーション用
-      let lineAnimProgress = 0;
-      const LINE_ANIM_SPEED = 0.02;
-
-      // 星の描画順をキャッシュ
-      const starDrawOrderCache = new Map<number, number>();
-
-      // クリーンアップ用にバッファを追跡
-      p.remove = ((originalRemove) => {
-        return function(this: p5) {
-          // p5.Graphicsバッファを明示的に解放
-          if (bgBuffer) {
-            bgBuffer.remove();
-            bgBuffer = null;
-          }
-          // 元のremoveを呼び出し
-          originalRemove.call(this);
-        };
-      })(p.remove.bind(p));
-
       p.setup = () => {
         p.createCanvas(width, height);
-        // 高DPIディスプレイでの最適化（必要に応じて調整）
         const dpr = Math.min(2, window.devicePixelRatio);
         p.pixelDensity(dpr);
-        p.frameRate(60); // 60fps -> 30fpsに制限してCPU負荷を削減
-
-        // 背景バッファを作成
-        bgBuffer = p.createGraphics(width, height);
-        bgBuffer.pixelDensity(dpr);
-
-        // 背景の装飾用小星を生成
-        for (let i = 0; i < 100; i++) {
-          bgStars.push({
-            x: p.random(width),
-            y: p.random(height),
-            size: p.random(0.5, 2),
-            twinkle: p.random(1000, 3000),
-          });
-        }
+        p.background('#0b1021');
       };
 
-      // 背景バッファを更新
-      const updateBackgroundBuffer = (time: number) => {
-        if (!bgBuffer) return;
-        
-        bgBuffer.background('#0a0a20');
-        bgBuffer.noStroke();
-        
-        for (let i = 0; i < bgStars.length; i++) {
-          const bgStar = bgStars[i];
-          const alpha = p.map(
-            Math.sin((time / bgStar.twinkle) * p.TWO_PI),
-            -1,
-            1,
-            60,
-            200
-          );
-          bgBuffer.fill(255, 255, 255, alpha);
-          bgBuffer.ellipse(bgStar.x, bgStar.y, bgStar.size);
-        }
-      };
+      let lineProgress = 0; //アニメーションの時間管理
 
-      // 星の描画順を取得（キャッシュ付き）
-      const getStarDrawOrder = (starIndex: number, lines: ConstellationLine[]): number => {
-        if (starDrawOrderCache.has(starIndex)) {
-          return starDrawOrderCache.get(starIndex)!;
-        }
-        
-        let order: number;
-        if (starIndex === lines[0]?.fromIndex) {
-          order = 0;
-        } else {
-          order = lines.length + 1;
-          for (let i = 0; i < lines.length; i++) {
-            if (lines[i].toIndex === starIndex) {
-              order = i + 1;
-              break;
-            }
-          }
-        }
-        
-        starDrawOrderCache.set(starIndex, order);
-        return order;
-      };
+const drawAnimatedLines = () => {
+  lineProgress += 0.02;
+  lineProgress = Math.min(lineProgress, lines.length);
+
+  const completed = Math.floor(lineProgress);
+  const t = lineProgress - completed;
+
+  p.stroke(120, 170, 255);
+  p.strokeWeight(2);
+
+  // 完全に描き終わった線
+  for (let i = 0; i < completed; i++) {
+    const { fromIndex, toIndex } = lines[i];
+    const from = stars[fromIndex];
+    const to = stars[toIndex];
+    p.line(from.x, from.y, to.x, to.y);
+  }
+
+  // 今まさに伸びている線（1本だけ）
+  if (completed < lines.length) {
+    const { fromIndex, toIndex } = lines[completed];
+    const from = stars[fromIndex];
+    const to = stars[toIndex];
+
+    p.line(
+      from.x,
+      from.y,
+      p.lerp(from.x, to.x, t),
+      p.lerp(from.y, to.y, t)
+    );
+  }
+};
+
+
 
       p.draw = () => {
-        const currentStars = starsRef.current;
-        const currentLines = linesRef.current;
-        const currentTime = p.millis();
+        p.background('#0b1021');
+        //星の描画
+        drawAnimatedLines();
 
-        // 背景バッファを一定間隔で更新（毎フレームではなく）
-        if (currentTime - lastBgUpdateTime > BG_UPDATE_INTERVAL) {
-          updateBackgroundBuffer(currentTime);
-          lastBgUpdateTime = currentTime;
-        }
-
-        // キャッシュした背景を描画
-        if (bgBuffer) {
-          p.image(bgBuffer, 0, 0);
-        } else {
-          p.background('#0a0a20');
-        }
-
-        // 線のアニメーション進行
-        const isStillAnimating = lineAnimProgress < currentLines.length;
-        if (isStillAnimating) {
-          lineAnimProgress += LINE_ANIM_SPEED;
-        } else if (!hasAnimationCompletedRef.current) {
-          // アニメーション完了を一度だけ通知
-          hasAnimationCompletedRef.current = true;
-          setIsAnimating(false);
-        }
-        animationProgressRef.current = lineAnimProgress;
-
-        // 星座の線を描画（アニメーション付き）
-        for (let i = 0; i < currentLines.length; i++) {
-          const line = currentLines[i];
-          const from = currentStars[line.fromIndex];
-          const to = currentStars[line.toIndex];
-          
-          if (!from || !to) continue;
-
-          // この線のアニメーション進行度
-          const lineProgress = Math.min(1, Math.max(0, lineAnimProgress - i));
-
-          if (lineProgress > 0) {
-            // 線の現在位置を計算
-            const currentX = p.lerp(from.x, to.x, lineProgress);
-            const currentY = p.lerp(from.y, to.y, lineProgress);
-
-            // グロー効果のある線（ループ回数を削減: 3回 → 2回）
-            p.stroke(100, 150, 255, 60);
-            p.strokeWeight(5);
-            p.line(from.x, from.y, currentX, currentY);
-            
-            p.stroke(100, 150, 255, 120);
-            p.strokeWeight(2.5);
-            p.line(from.x, from.y, currentX, currentY);
-
-            // メインの線
-            p.stroke(150, 200, 255, 220);
-            p.strokeWeight(1.5);
-            p.line(from.x, from.y, currentX, currentY);
-          }
-        }
-
-        // 星を描画
         p.noStroke();
-        for (let i = 0; i < currentStars.length; i++) {
-          const star = currentStars[i];
-          const clampedSize = p.constrain(star.size, 0, 100);
-          const diameter = p.map(clampedSize, 0, 100, 8, 26);
-          
-          // 星番号（描画順）- キャッシュを使用
-          const starOrder = getStarDrawOrder(i, currentLines);
-          const starAlpha = starOrder <= lineAnimProgress + 1 ? 255 : 100;
-
-          // 外側のグロー（ループ回数を削減: 段階的に描画）
-          const glowSize = diameter * 4;
-          p.fill(255, 255, 220, starAlpha * 0.05);
-          p.ellipse(star.x, star.y, glowSize);
-          p.fill(255, 255, 220, starAlpha * 0.15);
-          p.ellipse(star.x, star.y, glowSize * 0.6);
-          p.fill(255, 255, 220, starAlpha * 0.4);
-          p.ellipse(star.x, star.y, glowSize * 0.3);
-
-          // 中心の明るい点
-          p.fill(255, 255, 255, starAlpha);
-          p.ellipse(star.x, star.y, diameter);
-
-          // 十字のキラキラ
-          if (starAlpha > 200) {
-            p.stroke(255, 255, 255, starAlpha * 0.6);
-            p.strokeWeight(1);
-            const sparkleSize = diameter * 2;
-            p.line(star.x - sparkleSize, star.y, star.x + sparkleSize, star.y);
-            p.line(star.x, star.y - sparkleSize, star.x, star.y + sparkleSize);
-            p.noStroke();
-          }
-        }
-
-        // 星座名（アニメーション完了後に表示）
-        if (!isAnimating && constellationName) {
-          p.fill(255, 255, 255, 200);
-          p.noStroke();
-          p.textAlign(p.CENTER, p.BOTTOM);
-          p.textSize(20);
-          p.textFont('serif');
-          p.text(constellationName, width / 2, height - 30);
+        p.fill(255);
+        for (const star of stars) {
+          p.ellipse(star.x, star.y, Math.max(6, star.size));
         }
       };
     };
-  }, [width, height, isAnimating, constellationName]);
+  }, [width, height, lines, stars]);
 
   const containerRef = useP5(sketch);
 
-  // 完了ハンドラー
   const handleComplete = () => {
-    if (!constellationName.trim()) {
+    const name = constellationName.trim();
+    if (!name) {
       alert('星座の名前を入力してください');
       return;
     }
-    onComplete(constellationName.trim(), lines);
+    onComplete(name, lines);
   };
 
   return (
@@ -337,29 +134,22 @@ export function ConstellationCreator({
       </div>
 
       <div className="creator-controls">
-        {!isAnimating && (
-          <>
-            <p className="creator-hint">✨ 星座に名前をつけましょう</p>
-            <input
-              type="text"
-              className="constellation-name-input"
-              placeholder="星座の名前..."
-              value={constellationName}
-              onChange={(e) => setConstellationName(e.target.value)}
-              maxLength={20}
-            />
-            <button
-              className="btn btn-primary"
-              onClick={handleComplete}
-              disabled={!constellationName.trim()}
-            >
-              ⭐ この星座で決定
-            </button>
-          </>
-        )}
-        {isAnimating && (
-          <p className="creator-animating">星を結んでいます...</p>
-        )}
+        <p className="creator-hint">星座に名前をつけましょう</p>
+        <input
+          type="text"
+          className="constellation-name-input"
+          placeholder="星座の名前..."
+          value={constellationName}
+          onChange={(e) => setConstellationName(e.target.value)}
+          maxLength={20}
+        />
+        <button
+          className="btn btn-primary"
+          onClick={handleComplete}
+          disabled={!constellationName.trim()}
+        >
+          この星座で決定
+        </button>
       </div>
     </div>
   );

@@ -236,7 +236,7 @@ export async function createTestData(): Promise<void> {
   ];
   for (let i = 0; i < 7; i++) {
     const id = await addDiaryEntry(
-      formatDate(2025, 12, i + 1),
+      formatDate(2025, 11, i + 1),
       dummyBlob,
       makeMemo(`星座1-${i + 1}`),
       positions1[i]
@@ -265,7 +265,7 @@ export async function createTestData(): Promise<void> {
   ];
   for (let i = 0; i < 7; i++) {
     const id = await addDiaryEntry(
-      formatDate(2025, 12, i + 8),
+      formatDate(2025, 11, i + 8),
       dummyBlob,
       makeMemo(`星座2-${i + 1}`),
       positions2[i]
@@ -294,7 +294,7 @@ export async function createTestData(): Promise<void> {
   ];
   for (let i = 0; i < 7; i++) {
     const id = await addDiaryEntry(
-      formatDate(2025, 12, 15 + i),
+      formatDate(2025, 11, 15 + i),
       dummyBlob,
       makeMemo(`星座3-${i + 1}`),
       positions3[i]
@@ -310,21 +310,23 @@ export async function createTestData(): Promise<void> {
     { fromIndex: 2, toIndex: 6 },
   ]);
 
-  // 未割り当ての星（4つ）
+  // 未割り当ての星（6つ）
   const unassignedPositions = [
     { x: 0.25, y: 0.4 },
     { x: 0.5, y: 0.3 },
     { x: 0.75, y: 0.45 },
     { x: 0.4, y: 0.6 },
+    { x: 0.6, y: 0.5 },
+    { x: 0.3, y: 0.7 },
   ];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 6; i++) {
     await addDiaryEntry(
-      formatDate(2025, 12, 22 + i),
+      formatDate(2025, 11, 22 + i),
       dummyBlob,
       makeMemo(`未割り当て-${i + 1}`),
       unassignedPositions[i]
     );
   }
 
-  console.log('✅ Test data created: 3 constellations + 4 unassigned entries');
+  console.log('✅ Test data created: 3 constellations + 6 unassigned entries');
 }
