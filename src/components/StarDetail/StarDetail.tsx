@@ -17,7 +17,7 @@ export default function StarDetail({ entry, onClose }: Props) {//引数はprops�
       style={{
         position: 'fixed',
         top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         display: 'flex',//した二つのための宣言
         justifyContent: 'center',
         alignItems: 'center',
