@@ -33,8 +33,6 @@ interface ConstellationCanvasProps {
   stars: Star[];
   /** 星をつなぐ線の配列 */
   lines: ConstellationLine[];
-  /** 星座の名前（表示用） */
-  name?: string;
   /** キャンバスの幅 */
   width?: number;
   /** キャンバスの高さ */
@@ -65,7 +63,6 @@ interface ConstellationCanvasProps {
 export function ConstellationCanvas({
   stars,
   lines,
-  name,
   width = CANVAS_CONSTANTS.CONSTELLATION_WIDTH,
   height = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT,
   onStarClick,
@@ -86,17 +83,12 @@ export function ConstellationCanvas({
   const debugModeRef = useRef(debugMode);
   const constellationWidthRef = useRef(constellationWidth);
   const constellationCountRef = useRef(constellationCount);
-  const nameRef = useRef(name);
   //追加したよ
   const latestOnStarClick = useRef(onStarClick);
   // ref を更新（再レンダリングせずに値を更新）
   useEffect(() => {
     starsRef.current = stars;
   }, [stars]);
-
-  useEffect(() => {
-    nameRef.current = name;
-  }, [name]);
 
   useEffect(() => {
     linesRef.current = lines;
@@ -411,15 +403,6 @@ export function ConstellationCanvas({
           }
         }
 
-        // 星座名を描画（固定位置）
-        const currentName = nameRef.current;
-        if (currentName) {
-          p.fill(255, 255, 255, 200);
-          p.noStroke();
-          p.textAlign(p.CENTER, p.BOTTOM);
-          p.textSize(16);
-          p.text(currentName, width / 2, height - 20);
-        }
       };
 
       // 星を描画するヘルパー関数
