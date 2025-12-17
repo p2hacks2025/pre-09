@@ -94,18 +94,36 @@ body {
 /* 上部ヘッダー */
 .home-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
   pointer-events: auto;
+  width: 100%;
+  position: relative;
+}
+.constellation-date-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  opacity: 0.35;
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
-.constellation-date-range {
-  font-size: 1.4rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: #ffffff;
-  text-shadow: 0 0 12px rgba(100, 150, 255, 0.4);
+.constellation-year {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.constellation-month {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: capitalize;
 }
 
 /* 中央エリア（星座表示、タッチ透過） */
@@ -123,7 +141,8 @@ body {
 }
 
 .constellation-name {
-  font-size: 1.6rem;
+  font-size: 2.2rem;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
 }
 
