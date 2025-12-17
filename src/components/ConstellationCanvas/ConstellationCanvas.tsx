@@ -137,6 +137,9 @@ export function ConstellationCanvas({
       const twinkleStars: { x: number; y: number; size: number; twinkle: number; phase: number }[] = [];
       const staticStars: { x: number; y: number; size: number; alpha: number }[] = [];
 
+      // 流れ星（シンプルなライン）
+      const shootingStars: { x: number; y: number; vx: number; vy: number; life: number; length: number }[] = [];
+
       // デバッグモード用のキャッシュ文字列
       const debugTextCache: Map<string, string> = new Map();
 
@@ -182,6 +185,9 @@ export function ConstellationCanvas({
             alpha: p.random(40, 80),
           });
         }
+
+        // 流れ星の初期バッファ（空で開始）
+        shootingStars.length = 0;
       };
 
       p.draw = () => {
@@ -288,6 +294,43 @@ export function ConstellationCanvas({
           const alpha = 40 + 70 * (1 + Math.sin(bgStar.phase + frameCount * 0.05 / (bgStar.twinkle / 1000)));
           p.fill(200, 190, 255, alpha);
           p.ellipse(bgStar.x, bgStar.y, bgStar.size);
+        }
+
+        // 流れ星を更新・描画（右上→左下方向）
+        if (p.random() < 0.01 && shootingStars.length < 4) {
+          const startX = p.random(width * 0.3, width + 800);
+          const startY = 0;
+          const speedX = p.random(-7, -6);
+          const speedY = p.random(5, 7);
+          shootingStars.push({
+            x: startX,
+            y: startY,
+            vx: speedX,
+            vy: speedY,
+            life: 80,
+            length: 90,
+          });
+        }
+
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+          const s = shootingStars[i];
+          s.x += s.vx;
+          s.y += s.vy;
+          s.life -= 1;
+
+          const mag = Math.sqrt(s.vx * s.vx + s.vy * s.vy) || 1;
+          const tailX = s.x - (s.vx / mag) * s.length;
+          const tailY = s.y - (s.vy / mag) * s.length;
+          const alpha = p.map(s.life, 0, 50, 0, 220);
+
+          p.stroke(190, 170, 240, alpha);
+          p.strokeWeight(2);
+          p.line(s.x, s.y, tailX, tailY);
+
+          // 画面外 or 寿命で除去
+          if (s.life <= 0 || s.x < -200 || s.y > height + 200) {
+            shootingStars.splice(i, 1);
+          }
         }
 
         // 星座の線を描画
