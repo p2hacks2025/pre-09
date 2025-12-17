@@ -449,7 +449,7 @@ function App() {
         <div className="ui-entry">
           <header className="page-header">
             <button className="btn-back" onClick={() => setView('home')}>
-              ← 戻る
+              ← もどる
             </button>
             <h1>星座を作成</h1>
           </header>

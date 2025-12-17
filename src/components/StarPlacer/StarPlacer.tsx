@@ -32,58 +32,85 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
   };
 
   return (
-    <div style={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', padding: '20px' }}>
-      <h2 style={{fontSize: '1.2rem', margin: '10px 0'}}>🌟 一番明るい星をタップ！</h2>
-      
-      {/* 星座描画領域と同じサイズの固定コンテナ */}
-      <div style={{ 
-        position: 'relative', 
-        width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
-        height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
-        margin: '0 auto',
-        cursor: 'crosshair',
-        overflow: 'hidden',
-        borderRadius: '8px',
-        border: '2px solid #333'
-      }}
-        ref={containerRef}
-        onClick={handleClick}
-      >
-        <img 
-          src={photoUrl} 
-          alt="Selected"
-          style={{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            display: 'block',
-            pointerEvents: 'none'
-          }} 
-        />
-        {starPos && (
-          <div style={{
-            position: 'absolute',
-            left: `${starPos.x * 100}%`, top: `${starPos.y * 100}%`,
-            transform: 'translate(-50%, -50%)', fontSize: '30px', pointerEvents: 'none',
-            textShadow: '0 0 10px yellow'
-          }}>✨</div>
-        )}
-      </div>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      overflowY: 'auto',
+      paddingBottom: '40px'
+    }}>
+      <div style={{ width: '100%', height: '100%', position: 'relative', overflowY: 'auto' }}>
+        <h2 style={{
+          position: 'absolute',
+          top: '40px',
+          width: '100%',
+          textAlign: 'center',
+          fontSize: '1.2rem', 
+          margin: 0,
+          zIndex: 10,
+          pointerEvents: 'none'
+        }}>🌟 一番明るい星をタップ！</h2>
+        
+        {/* 星座描画領域と同じサイズの固定コンテナ */}
+        <div style={{ 
+          position: 'relative', 
+          width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
+          height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
+          margin: `${CANVAS_CONSTANTS.PADDING_Y_TOP}px auto 20px auto`,
+          cursor: 'crosshair',
+          overflow: 'hidden',
+          borderRadius: '8px',
+          border: '2px solid #333'
+        }}
+          ref={containerRef}
+          onClick={handleClick}
+        >
+          <img 
+            src={photoUrl} 
+            alt="Selected"
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover',
+              display: 'block',
+              pointerEvents: 'none'
+            }} 
+          />
+          {starPos && (
+            <div style={{
+              position: 'absolute',
+              left: `${starPos.x * 100}%`, top: `${starPos.y * 100}%`,
+              transform: 'translate(-50%, -50%)', fontSize: '30px', pointerEvents: 'none',
+              textShadow: '0 0 10px yellow'
+            }}>✨</div>
+          )}
+        </div>
 
-      <div style={{ marginTop: 'auto', paddingTop: '20px', display: 'flex', gap: '10px' }}>
-        <button 
-          onClick={onBack} 
-          className="btn btn-outline"
-          style={{ flex: 1 }}
-        >
-          もどる
-        </button>
-        <button 
-          onClick={handleConfirm} disabled={!starPos} className="btn btn-primary"
-          style={{ opacity: starPos ? 1 : 0.5, flex: 1 }}
-        >
-          決定する ✅
-        </button>
+        <div style={{ 
+          width: '100%',
+          maxWidth: '500px',
+          margin: '0 auto',
+          padding: '0 20px 50px 20px',
+          display: 'flex', 
+          gap: '10px' 
+        }}>
+          <button 
+            onClick={onBack} 
+            className="btn btn-outline"
+            style={{ flex: 1 }}
+          >
+            もどる
+          </button>
+          <button 
+            onClick={handleConfirm} disabled={!starPos} className="btn btn-primary"
+            style={{ opacity: starPos ? 1 : 0.5, flex: 1 }}
+          >
+            決定する ✅
+          </button>
+        </div>
       </div>
     </div>
   );

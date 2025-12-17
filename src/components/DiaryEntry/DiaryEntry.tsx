@@ -200,60 +200,79 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      {/* 戻るボタン */}
-      <button
-        onClick={onCancel}
-        style={{
-          background: 'none', border: 'none', fontSize: '1rem',
-          cursor: 'pointer', marginBottom: '10px', color: '#666'
-        }}
-      >
-        ← もどる
-      </button>
-      
-      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-        <label style={{ 
-          display: 'block', 
-          width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
-          height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
-          margin: '0 auto',
-          border: '2px dashed #ccc', 
-          cursor: 'pointer', 
-          borderRadius: '8px',
-          background: '#fafafa', 
-          position: 'relative',
-          overflow: 'hidden'
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      overflowY: 'auto',
+      paddingBottom: '40px'
+    }}>
+      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+        {/* 戻るボタン */}
+        <button
+          onClick={onCancel}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            background: 'none', border: 'none', fontSize: '1rem',
+            cursor: 'pointer', color: '#666', zIndex: 10
+          }}
+        >
+          ← もどる
+        </button>
+        
+        <div style={{ 
+          width: '100%',
+          maxWidth: '500px',
+          padding: '0 20px',
+          margin: `${CANVAS_CONSTANTS.PADDING_Y_TOP}px auto 50px auto`
         }}>
-          {previewUrl ? (
-            <img src={previewUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="Preview" />
-          ) : (
-             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>
-              タップして写真を選ぶ
-            </div>
-          )}
-          <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-        </label>
+          <label style={{ 
+            display: 'block', 
+            width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
+            height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
+            margin: '0 auto 20px auto',
+            border: '2px dashed #ccc', 
+            cursor: 'pointer', 
+            borderRadius: '8px',
+            background: '#fafafa', 
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {previewUrl ? (
+              <img src={previewUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="Preview" />
+            ) : (
+               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>
+                タップして写真を選ぶ
+              </div>
+            )}
+            <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+          </label>
+
+          <textarea
+            style={{ width: '100%', height: '100px', padding: '10px', marginBottom: '20px', borderRadius: '4px', border: '1px solid #ccc' }}
+            placeholder="ひとことメモ..."
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+
+          <button 
+            className="btn btn-primary" 
+            disabled={!previewUrl} 
+            onClick={() => setStep('star')}
+            style={{ 
+              width: '100%', padding: '12px', borderRadius: '4px', border: 'none',
+              background: previewUrl ? '#007bff' : '#ccc', color: 'white'
+            }}
+          >
+            次へ
+          </button>
+        </div>
       </div>
-
-      <textarea
-        style={{ width: '100%', height: '100px', padding: '10px', marginBottom: '20px', borderRadius: '4px', border: '1px solid #ccc' }}
-        placeholder="ひとことメモ..."
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-      />
-
-      <button 
-        className="btn btn-primary" 
-        disabled={!previewUrl} 
-        onClick={() => setStep('star')}
-        style={{ 
-          width: '100%', padding: '12px', borderRadius: '4px', border: 'none',
-          background: previewUrl ? '#007bff' : '#ccc', color: 'white'
-        }}
-      >
-        次へ
-      </button>
     </div>
   );
 }
