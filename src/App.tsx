@@ -202,13 +202,15 @@ function App() {
     // 既存のエントリから星データを生成
     const stars: Star[] = allEntries.map((entry) => {
       const groupIndex = entryIdToGroupIndex.get(entry.id!) ?? unassignedGroupIndex;
+      const clampedMemoLength = Math.max(0, Math.min(entry.memo?.length ?? 0, 100));
+
       return {
         entryId: entry.id!,
         // 星座グループに基づいてX座標をオフセット
         x: (entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH) + groupIndex * CONSTELLATION_WIDTH + CANVAS_CONSTANTS.PADDING_X,
         y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP,
         brightness: 200,
-        size: 8,
+        size: clampedMemoLength,
       };
     });
     setCanvasStars(stars);

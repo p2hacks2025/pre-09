@@ -207,6 +207,22 @@ export async function createTestData(): Promise<void> {
     return `${year}-${mm}-${dd}`;
   };
 
+  const randomLength = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const makeMemo = (label: string) => {
+    const base = `テストメモ ${label}`;
+    const targetLength = randomLength(0, 100);
+    if (base.length >= targetLength) return base.slice(0, targetLength);
+
+    const filler = 'abcdefghijklmnopqrstuvwxyz ';
+    let memo = base;
+    while (memo.length < targetLength) {
+      memo += filler;
+    }
+    return memo.slice(0, targetLength);
+  };
+
   // 星座1: 「希望の星」（7つの星）
   const constellation1Entries: number[] = [];
   const positions1 = [
@@ -222,7 +238,7 @@ export async function createTestData(): Promise<void> {
     const id = await addDiaryEntry(
       formatDate(2025, 12, i + 1),
       dummyBlob,
-      `テストメモ 星座1-${i + 1}`,
+      makeMemo(`星座1-${i + 1}`),
       positions1[i]
     );
     constellation1Entries.push(id);
@@ -251,7 +267,7 @@ export async function createTestData(): Promise<void> {
     const id = await addDiaryEntry(
       formatDate(2025, 12, i + 8),
       dummyBlob,
-      `テストメモ 星座2-${i + 1}`,
+      makeMemo(`星座2-${i + 1}`),
       positions2[i]
     );
     constellation2Entries.push(id);
@@ -280,7 +296,7 @@ export async function createTestData(): Promise<void> {
     const id = await addDiaryEntry(
       formatDate(2025, 12, 15 + i),
       dummyBlob,
-      `テストメモ 星座3-${i + 1}`,
+      makeMemo(`星座3-${i + 1}`),
       positions3[i]
     );
     constellation3Entries.push(id);
@@ -305,7 +321,7 @@ export async function createTestData(): Promise<void> {
     await addDiaryEntry(
       formatDate(2025, 12, 22 + i),
       dummyBlob,
-      `未割り当てテストメモ ${i + 1}`,
+      makeMemo(`未割り当て-${i + 1}`),
       unassignedPositions[i]
     );
   }

@@ -360,23 +360,16 @@ export function ConstellationCanvas({
       };
 
       // 星を描画するヘルパー関数
-      function drawStar(p: p5, x: number, y: number, size: number, brightness: number) {
+      function drawStar(p: p5, x: number, y: number, textLength: number, brightness: number) {
+        const clampedLength = p.constrain(textLength, 0, 100);
+        const diameter = p.map(clampedLength, 0, 100, 10, 20); // 小さなメモでも見えるよう最小サイズを確保
+
+        const fillColor = p.color(starColor);
+        fillColor.setAlpha(p.map(brightness, 0, 255, 120, 255));
+
         p.noStroke();
-        // 外側のグロー
-        for (let r = size * 4; r > 0; r -= 2) {
-          const alpha = p.map(r, 0, size * 4, brightness, 0);
-          p.fill(255, 255, 220, alpha);
-          p.ellipse(x, y, r);
-        }
-        // 中心の明るい点
-        p.fill(starColor);
-        p.ellipse(x, y, size);
-        // 十字のキラキラ
-        p.stroke(255, 255, 255, brightness * 0.5);
-        p.strokeWeight(1);
-        const sparkleSize = size * 2;
-        p.line(x - sparkleSize, y, x + sparkleSize, y);
-        p.line(x, y - sparkleSize, x, y + sparkleSize);
+        p.fill(fillColor);
+        p.circle(x, y, diameter);
       }
 
       // クリックイベント
