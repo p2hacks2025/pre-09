@@ -84,6 +84,12 @@ export interface Star {
   brightness: number;
   /** 星のサイズ */
   size: number;
+  /** グループ内で最も古い星かどうか */
+  isOldest?: boolean;
+  /** グループ内で最も新しい星かどうか */
+  isNewest?: boolean;
+  /** ラベル表示用の日付 (MM/DD) */
+  dateLabel?: string;
 }
 
 /**

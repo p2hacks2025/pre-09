@@ -199,16 +199,53 @@ function App() {
       if (entry.id) entryIdToGlobalIndex.set(entry.id, index);
     });
 
+    // グループごとのエントリを集計して最古/最新を「作成順（IDの昇順）」で特定
+    const groupEntries = new Map<number, DiaryEntryType[]>();
+    allEntries.forEach((entry) => {
+      const groupIndex = entryIdToGroupIndex.get(entry.id!) ?? unassignedGroupIndex;
+      const list = groupEntries.get(groupIndex) ?? [];
+      list.push(entry);
+      groupEntries.set(groupIndex, list);
+    });
+
+    const groupExtrema = new Map<number, { oldestId: number; newestId: number }>();
+    groupEntries.forEach((entries, groupIndex) => {
+      const ids = entries
+        .map((e) => e.id)
+        .filter((id): id is number => typeof id === 'number');
+      if (ids.length === 0) return;
+      groupExtrema.set(groupIndex, {
+        oldestId: Math.min(...ids),
+        newestId: Math.max(...ids),
+      });
+    });
+
+    const toMonthDay = (dateStr: string) => {
+      const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return dateStr;
+      return `${match[2]}/${match[3]}`;
+    };
+
     // 既存のエントリから星データを生成
     const stars: Star[] = allEntries.map((entry) => {
       const groupIndex = entryIdToGroupIndex.get(entry.id!) ?? unassignedGroupIndex;
+      const clampedMemoLength = Math.max(0, Math.min(entry.memo?.length ?? 0, 100));
+      const extrema = groupExtrema.get(groupIndex);
+
+      const isOldest = extrema ? entry.id === extrema.oldestId : false;
+      const isNewest = extrema ? entry.id === extrema.newestId : false;
+      const dateLabel = toMonthDay(entry.date);
+
       return {
         entryId: entry.id!,
         // 星座グループに基づいてX座標をオフセット
         x: (entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH) + groupIndex * CONSTELLATION_WIDTH + CANVAS_CONSTANTS.PADDING_X,
         y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP,
         brightness: 200,
-        size: 8,
+        size: clampedMemoLength,
+        isOldest,
+        isNewest,
+        dateLabel,
       };
     });
     setCanvasStars(stars);

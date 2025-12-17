@@ -77,13 +77,17 @@ export function ConstellationCreator({
 
   // エントリから星データを生成（CANVAS_CONSTANTSを使用して座標系を統一）
   const stars: Star[] = useMemo(() => {
-    return entries.map((entry) => ({
-      entryId: entry.id!,
-      x: entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH + CANVAS_CONSTANTS.PADDING_X,
-      y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP,
-      brightness: 200,
-      size: 10,
-    }));
+    return entries.map((entry) => {
+      const clampedMemoLength = Math.max(0, Math.min(entry.memo?.length ?? 0, 100));
+
+      return {
+        entryId: entry.id!,
+        x: entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH + CANVAS_CONSTANTS.PADDING_X,
+        y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP,
+        brightness: 200,
+        size: clampedMemoLength,
+      };
+    });
   }, [entries]);
 
   // 最近傍法で線を自動生成
@@ -264,13 +268,15 @@ export function ConstellationCreator({
         p.noStroke();
         for (let i = 0; i < currentStars.length; i++) {
           const star = currentStars[i];
+          const clampedSize = p.constrain(star.size, 0, 100);
+          const diameter = p.map(clampedSize, 0, 100, 8, 26);
           
           // 星番号（描画順）- キャッシュを使用
           const starOrder = getStarDrawOrder(i, currentLines);
           const starAlpha = starOrder <= lineAnimProgress + 1 ? 255 : 100;
 
           // 外側のグロー（ループ回数を削減: 段階的に描画）
-          const glowSize = star.size * 4;
+          const glowSize = diameter * 4;
           p.fill(255, 255, 220, starAlpha * 0.05);
           p.ellipse(star.x, star.y, glowSize);
           p.fill(255, 255, 220, starAlpha * 0.15);
@@ -280,13 +286,13 @@ export function ConstellationCreator({
 
           // 中心の明るい点
           p.fill(255, 255, 255, starAlpha);
-          p.ellipse(star.x, star.y, star.size);
+          p.ellipse(star.x, star.y, diameter);
 
           // 十字のキラキラ
           if (starAlpha > 200) {
             p.stroke(255, 255, 255, starAlpha * 0.6);
             p.strokeWeight(1);
-            const sparkleSize = star.size * 2;
+            const sparkleSize = diameter * 2;
             p.line(star.x - sparkleSize, star.y, star.x + sparkleSize, star.y);
             p.line(star.x, star.y - sparkleSize, star.x, star.y + sparkleSize);
             p.noStroke();

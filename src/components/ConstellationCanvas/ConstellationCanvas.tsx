@@ -285,7 +285,7 @@ export function ConstellationCanvas({
 
         // 星を描画
         for (const star of currentStars) {
-          drawStar(p, star.x, star.y, star.size, star.brightness);
+          drawStar(p, star.x, star.y, star.size, star.brightness, star.isNewest, star.isOldest, star.dateLabel);
         }
 
         p.pop();
@@ -360,23 +360,51 @@ export function ConstellationCanvas({
       };
 
       // 星を描画するヘルパー関数
-      function drawStar(p: p5, x: number, y: number, size: number, brightness: number) {
+      function drawStar(
+        p: p5,
+        x: number,
+        y: number,
+        textLength: number,
+        brightness: number,
+        isNewest = false,
+        isOldest = false,
+        dateLabel?: string,
+      ) {
+        const clampedLength = p.constrain(textLength, 0, 100);
+        const diameter = p.map(clampedLength, 0, 100, 10, 20); // 小さなメモでも見えるよう最小サイズを確保
+
+        const fillColor = p.color(starColor);
+        fillColor.setAlpha(p.map(brightness, 0, 255, 120, 255));
+
         p.noStroke();
-        // 外側のグロー
-        for (let r = size * 4; r > 0; r -= 2) {
-          const alpha = p.map(r, 0, size * 4, brightness, 0);
-          p.fill(255, 255, 220, alpha);
-          p.ellipse(x, y, r);
+        p.fill(fillColor);
+        p.circle(x, y, diameter);
+
+        // 最古/最新はベースより一回り大きい白いアウトラインを描画（色統一）
+        if (isOldest || isNewest) {
+          const outlineAlpha = p.map(brightness, 0, 255, 140, 235);
+          const outlineBase = diameter * 1.2;
+
+          p.noFill();
+          p.stroke(200, 190, 255, outlineAlpha);
+          p.strokeWeight(1.5);
+
+          if (isOldest) {
+            p.circle(x, y, outlineBase + 6);
+          }
+
+          if (isNewest) {
+            p.circle(x, y, outlineBase + 6);
+          }
+
+          if (dateLabel) {
+            p.noStroke();
+            p.fill(255, 255, 255, 200);
+            p.textAlign(p.CENTER, p.TOP);
+            p.textSize(15);
+            p.text(dateLabel, x, y + outlineBase);
+          }
         }
-        // 中心の明るい点
-        p.fill(starColor);
-        p.ellipse(x, y, size);
-        // 十字のキラキラ
-        p.stroke(255, 255, 255, brightness * 0.5);
-        p.strokeWeight(1);
-        const sparkleSize = size * 2;
-        p.line(x - sparkleSize, y, x + sparkleSize, y);
-        p.line(x, y - sparkleSize, x, y + sparkleSize);
       }
 
       // クリックイベント
