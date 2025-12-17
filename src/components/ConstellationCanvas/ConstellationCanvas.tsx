@@ -33,8 +33,6 @@ interface ConstellationCanvasProps {
   stars: Star[];
   /** 星をつなぐ線の配列 */
   lines: ConstellationLine[];
-  /** 星座の名前（表示用） */
-  name?: string;
   /** キャンバスの幅 */
   width?: number;
   /** キャンバスの高さ */
@@ -65,7 +63,6 @@ interface ConstellationCanvasProps {
 export function ConstellationCanvas({
   stars,
   lines,
-  name,
   width = CANVAS_CONSTANTS.CONSTELLATION_WIDTH,
   height = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT,
   onStarClick,
@@ -86,17 +83,12 @@ export function ConstellationCanvas({
   const debugModeRef = useRef(debugMode);
   const constellationWidthRef = useRef(constellationWidth);
   const constellationCountRef = useRef(constellationCount);
-  const nameRef = useRef(name);
   //追加したよ
   const latestOnStarClick = useRef(onStarClick);
   // ref を更新（再レンダリングせずに値を更新）
   useEffect(() => {
     starsRef.current = stars;
   }, [stars]);
-
-  useEffect(() => {
-    nameRef.current = name;
-  }, [name]);
 
   useEffect(() => {
     linesRef.current = lines;
@@ -133,8 +125,12 @@ export function ConstellationCanvas({
       // クリック判定用の星の半径
       const CLICK_RADIUS = 20;
 
-      // 背景の小さな星（装飾用）
-      const bgStars: { x: number; y: number; size: number; twinkle: number; phase: number }[] = [];
+      // 背景の小さな星（装飾用）: 点滅する星としない星を分離
+      const twinkleStars: { x: number; y: number; size: number; twinkle: number; phase: number }[] = [];
+      const staticStars: { x: number; y: number; size: number; alpha: number }[] = [];
+
+      // 流れ星（シンプルなライン）
+      const shootingStars: { x: number; y: number; vx: number; vy: number; life: number; length: number }[] = [];
 
       // デバッグモード用のキャッシュ文字列
       const debugTextCache: Map<string, string> = new Map();
@@ -161,16 +157,29 @@ export function ConstellationCanvas({
         backgroundGradient.addColorStop(0.7, '#351a54ff');
         backgroundGradient.addColorStop(1, '#5a3766');
 
-        // 背景の装飾用小星を生成（広範囲に配置）
-        for (let i = 0; i < 200; i++) {
-          bgStars.push({
+        // 点滅する星（サイズ3を100個に固定）
+        for (let i = 0; i < 100; i++) {
+          twinkleStars.push({
             x: p.random(-500, width + 2000), // スクロール用に広範囲
             y: p.random(height),
-            size: p.random(0.5, 2.5),
+            size: 3,
             twinkle: p.random(1000, 4000),
-            phase: p.random(p.TWO_PI), // 初期位相をランダムに
+            phase: p.random(p.TWO_PI),
           });
         }
+
+        // 点滅しない星（小さめ＆低透明度）
+        for (let i = 0; i < 600; i++) {
+          staticStars.push({
+            x: p.random(-500, width + 2000),
+            y: p.random(height),
+            size: p.random(1.5, 2.8),
+            alpha: p.random(40, 80),
+          });
+        }
+
+        // 流れ星の初期バッファ（空で開始）
+        shootingStars.length = 0;
       };
 
       p.draw = () => {
@@ -259,15 +268,61 @@ export function ConstellationCanvas({
           }
         }
 
-        // 装飾用の小さな星を描画（瞬き効果）
+        // 装飾用の小さな星を描画
         p.noStroke();
         const frameCount = p.frameCount;
-        for (let i = 0; i < bgStars.length; i++) {
-          const bgStar = bgStars[i];
+
+        // 点滅しない星（常時薄め）
+        for (let i = 0; i < staticStars.length; i++) {
+          const star = staticStars[i];
+          p.fill(200, 190, 255, star.alpha);
+          p.ellipse(star.x, star.y, star.size);
+        }
+
+        // 点滅する星（サイズ固定3）
+        for (let i = 0; i < twinkleStars.length; i++) {
+          const bgStar = twinkleStars[i];
           // frameCountを使用して計算（millis()より軽量）
-          const alpha = 80 + 87.5 * (1 + Math.sin(bgStar.phase + frameCount * 0.05 / (bgStar.twinkle / 1000)));
-          p.fill(255, 255, 255, alpha);
+          const alpha = 40 + 70 * (1 + Math.sin(bgStar.phase + frameCount * 0.05 / (bgStar.twinkle / 1000)));
+          p.fill(200, 190, 255, alpha);
           p.ellipse(bgStar.x, bgStar.y, bgStar.size);
+        }
+
+        // 流れ星を更新・描画（右上→左下方向）
+        if (p.random() < 0.01 && shootingStars.length < 4) {
+          const startX = p.random(width * 0.3, width + 800);
+          const startY = 0;
+          const speedX = p.random(-7, -6);
+          const speedY = p.random(5, 7);
+          shootingStars.push({
+            x: startX,
+            y: startY,
+            vx: speedX,
+            vy: speedY,
+            life: 80,
+            length: 90,
+          });
+        }
+
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+          const s = shootingStars[i];
+          s.x += s.vx;
+          s.y += s.vy;
+          s.life -= 1;
+
+          const mag = Math.sqrt(s.vx * s.vx + s.vy * s.vy) || 1;
+          const tailX = s.x - (s.vx / mag) * s.length;
+          const tailY = s.y - (s.vy / mag) * s.length;
+          const alpha = p.map(s.life, 0, 50, 0, 220);
+
+          p.stroke(190, 170, 240, alpha);
+          p.strokeWeight(2);
+          p.line(s.x, s.y, tailX, tailY);
+
+          // 画面外 or 寿命で除去
+          if (s.life <= 0 || s.x < -200 || s.y > height + 200) {
+            shootingStars.splice(i, 1);
+          }
         }
 
         // 星座の線を描画
@@ -348,15 +403,6 @@ export function ConstellationCanvas({
           }
         }
 
-        // 星座名を描画（固定位置）
-        const currentName = nameRef.current;
-        if (currentName) {
-          p.fill(255, 255, 255, 200);
-          p.noStroke();
-          p.textAlign(p.CENTER, p.BOTTOM);
-          p.textSize(16);
-          p.text(currentName, width / 2, height - 20);
-        }
       };
 
       // 星を描画するヘルパー関数
