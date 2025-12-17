@@ -13,7 +13,7 @@ interface ConstellationCreatorProps {
   height?: number;
 }
 
-// 最近傍法で星を結ぶシンプルな線生成
+//順番に星をつなぐシンプルな線生成
 function generateDateOrderLines(stars: Star[]): ConstellationLine[] {
   const lines: ConstellationLine[] = [];
 
@@ -58,17 +58,47 @@ export function ConstellationCreator({
         p.background('#0b1021');
       };
 
+      let lineProgress = 0; //アニメーションの時間管理
+
+const drawAnimatedLines = () => {
+  lineProgress += 0.02;
+  lineProgress = Math.min(lineProgress, lines.length);
+
+  const completed = Math.floor(lineProgress);
+  const t = lineProgress - completed;
+
+  p.stroke(120, 170, 255);
+  p.strokeWeight(2);
+
+  // 完全に描き終わった線
+  for (let i = 0; i < completed; i++) {
+    const { fromIndex, toIndex } = lines[i];
+    const from = stars[fromIndex];
+    const to = stars[toIndex];
+    p.line(from.x, from.y, to.x, to.y);
+  }
+
+  // 今まさに伸びている線（1本だけ）
+  if (completed < lines.length) {
+    const { fromIndex, toIndex } = lines[completed];
+    const from = stars[fromIndex];
+    const to = stars[toIndex];
+
+    p.line(
+      from.x,
+      from.y,
+      p.lerp(from.x, to.x, t),
+      p.lerp(from.y, to.y, t)
+    );
+  }
+};
+
+
+
       p.draw = () => {
         p.background('#0b1021');
-
-        p.stroke(120, 170, 255);
-        p.strokeWeight(2);
-        for (const line of lines) {
-          const from = stars[line.fromIndex];
-          const to = stars[line.toIndex];
-          if (!from || !to) continue;
-          p.line(from.x, from.y, to.x, to.y);
-        }
+        //星の描画
+        drawAnimatedLines();
 
         p.noStroke();
         p.fill(255);
