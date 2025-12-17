@@ -50,3 +50,13 @@ React (TypeScript) と p5.js を組み合わせた写真日記Webアプリの開
 # Context specific to User
 * ユーザーはハッカソン中です。
 * **最重要課題:** p5.js のインスタンスが増えすぎてメモリを圧迫することを懸念しています。新しいコードを提案する際は、必ず「古いインスタンスが正しく削除されるか」を考慮してください。
+
+# Commit Message Rules
+* Format: `<type>: <subject>`
+* Types:
+  - `feat`: New feature
+  - `fix`: Bug fix
+  - `docs`: Documentation
+  - `style`: Formatting, CSS
+  - `refactor`: Code restructuring
+* Subject: Japanese, simple and clear.
