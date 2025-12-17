@@ -133,8 +133,9 @@ export function ConstellationCanvas({
       // クリック判定用の星の半径
       const CLICK_RADIUS = 20;
 
-      // 背景の小さな星（装飾用）
-      const bgStars: { x: number; y: number; size: number; twinkle: number; phase: number }[] = [];
+      // 背景の小さな星（装飾用）: 点滅する星としない星を分離
+      const twinkleStars: { x: number; y: number; size: number; twinkle: number; phase: number }[] = [];
+      const staticStars: { x: number; y: number; size: number; alpha: number }[] = [];
 
       // デバッグモード用のキャッシュ文字列
       const debugTextCache: Map<string, string> = new Map();
@@ -161,14 +162,24 @@ export function ConstellationCanvas({
         backgroundGradient.addColorStop(0.7, '#351a54ff');
         backgroundGradient.addColorStop(1, '#5a3766');
 
-        // 背景の装飾用小星を生成（広範囲に配置）
-        for (let i = 0; i < 200; i++) {
-          bgStars.push({
+        // 点滅する星（サイズ3を100個に固定）
+        for (let i = 0; i < 100; i++) {
+          twinkleStars.push({
             x: p.random(-500, width + 2000), // スクロール用に広範囲
             y: p.random(height),
-            size: p.random(0.5, 2.5),
+            size: 3,
             twinkle: p.random(1000, 4000),
-            phase: p.random(p.TWO_PI), // 初期位相をランダムに
+            phase: p.random(p.TWO_PI),
+          });
+        }
+
+        // 点滅しない星（小さめ＆低透明度）
+        for (let i = 0; i < 600; i++) {
+          staticStars.push({
+            x: p.random(-500, width + 2000),
+            y: p.random(height),
+            size: p.random(1.5, 2.8),
+            alpha: p.random(40, 80),
           });
         }
       };
@@ -259,14 +270,23 @@ export function ConstellationCanvas({
           }
         }
 
-        // 装飾用の小さな星を描画（瞬き効果）
+        // 装飾用の小さな星を描画
         p.noStroke();
         const frameCount = p.frameCount;
-        for (let i = 0; i < bgStars.length; i++) {
-          const bgStar = bgStars[i];
+
+        // 点滅しない星（常時薄め）
+        for (let i = 0; i < staticStars.length; i++) {
+          const star = staticStars[i];
+          p.fill(200, 190, 255, star.alpha);
+          p.ellipse(star.x, star.y, star.size);
+        }
+
+        // 点滅する星（サイズ固定3）
+        for (let i = 0; i < twinkleStars.length; i++) {
+          const bgStar = twinkleStars[i];
           // frameCountを使用して計算（millis()より軽量）
-          const alpha = 80 + 87.5 * (1 + Math.sin(bgStar.phase + frameCount * 0.05 / (bgStar.twinkle / 1000)));
-          p.fill(255, 255, 255, alpha);
+          const alpha = 40 + 70 * (1 + Math.sin(bgStar.phase + frameCount * 0.05 / (bgStar.twinkle / 1000)));
+          p.fill(200, 190, 255, alpha);
           p.ellipse(bgStar.x, bgStar.y, bgStar.size);
         }
 
