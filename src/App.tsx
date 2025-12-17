@@ -74,34 +74,6 @@ function App() {
     return map;
   }, [entries]);
 
-  const getDateRangeForIndex = useCallback(
-    (index: number) => {
-      const groupEntries: DiaryEntryType[] = [];
-
-      if (index < constellations.length) {
-        const entryIds = constellations[index]?.entryIds ?? [];
-        entryIds.forEach((id) => {
-          const entry = entryById.get(id);
-          if (entry) groupEntries.push(entry);
-        });
-      } else if (index === constellations.length) {
-        groupEntries.push(...unassignedEntries);
-      }
-
-      if (groupEntries.length === 0) return '';
-
-      const sortedDates = groupEntries
-        .map((entry) => entry.date)
-        .sort();
-
-      const formatDate = (date: string) => date.replace(/-/g, '/');
-      const start = formatDate(sortedDates[0]);
-      const end = formatDate(sortedDates[sortedDates.length - 1]);
-      return start === end ? start : `${start} ~ ${end}`;
-    },
-    [constellations, entryById, unassignedEntries]
-  );
-
   // 星座の総数（未割り当てエントリも1グループとしてカウント）
   const totalConstellationGroups = constellations.length + (unassignedEntries.length > 0 ? 1 : 0);
 
@@ -393,7 +365,32 @@ function App() {
   const renderHomeUI = () => {
     const canCreateConstellation = unassignedEntries.length >= 7;
 
-    const currentDateRange = getDateRangeForIndex(currentConstellationIndex);
+    const currentGroupEntries = (() => {
+      if (currentConstellationIndex < constellations.length) {
+        const ids = constellations[currentConstellationIndex]?.entryIds ?? [];
+        return entries.filter((e) => e.id !== undefined && ids.includes(e.id));
+      }
+      if (currentConstellationIndex === constellations.length) {
+        return unassignedEntries;
+      }
+      return [];
+    })();
+
+    const oldestEntry = currentGroupEntries.reduce<DiaryEntryType | null>((oldest, entry) => {
+      if (!oldest) return entry;
+      return entry.date < oldest.date ? entry : oldest;
+    }, null);
+
+    const oldestYear = oldestEntry ? oldestEntry.date.slice(0, 4) : '';
+    const oldestMonthName = (() => {
+      if (!oldestEntry) return '';
+      const monthIndex = parseInt(oldestEntry.date.slice(5, 7), 10) - 1;
+      const monthNames = [
+        'January','February','March','April','May','June','July',
+        'August','September','October','November','December',
+      ];
+      return monthNames[monthIndex] ?? '';
+    })();
 
     // 現在表示中の星座名を取得
     const currentConstellationName = constellations[currentConstellationIndex]?.name 
@@ -419,7 +416,10 @@ function App() {
       <div className="ui-home">
         {/* 上部: タイトルと星座インジケーター */}
         <div className="home-header">
-          <h1 className="constellation-date-range">{currentDateRange || '記録なし'}</h1>
+          <div className="constellation-date-hero">
+            {oldestYear && <span className="constellation-year">{oldestYear}</span>}
+            {oldestMonthName && <span className="constellation-month">{oldestMonthName}</span>}
+          </div>
           {totalConstellationGroups > 0 && (
             <div className="constellation-indicator">
               <span className="constellation-name">{currentConstellationName}</span>
