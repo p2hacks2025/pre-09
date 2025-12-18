@@ -38,10 +38,17 @@
   box-shadow: 
     0 0 30px rgba(100, 150, 255, 0.2),
     0 4px 20px rgba(0, 0, 0, 0.5);
+  width: 100%;             /* 横幅いっぱいにしようとする */
+  max-width: 500px;        /* でも最大サイズはこのくらい（元のキャンバスサイズに合わせて調整） */
+  aspect-ratio: 1 / 1;     /* 正方形を保つ（これがないと縦長になったりする） */
 }
 
 .creator-canvas canvas {
-  display: block;
+  .creator-canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain; /* アスペクト比を崩さずに収める */
+  }
 }
 
 .creator-controls {
