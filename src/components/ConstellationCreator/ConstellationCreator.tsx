@@ -41,7 +41,7 @@ export function ConstellationCreator({
     return entries.map((entry) => ({
       entryId: entry.id!,
       x: entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH + CANVAS_CONSTANTS.PADDING_X,
-      y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP,
+      y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP - 80,
       brightness: 200,
       size: 10,
     }));
@@ -51,49 +51,41 @@ export function ConstellationCreator({
 
   const sketch: Sketch = useMemo(() => {
     return (p: p5) => {
+      let lineProgress = 0; //アニメーションの時間管理
+      const drawAnimatedLines = () => {
+        lineProgress += 0.02;
+        lineProgress = Math.min(lineProgress, lines.length);
+        const completed = Math.floor(lineProgress);
+        const t = lineProgress - completed;
+        p.stroke(120, 170, 255);
+        p.strokeWeight(2);
+        // 完全に描き終わった線
+        for (let i = 0; i < completed; i++) {
+          const { fromIndex, toIndex } = lines[i];
+          const from = stars[fromIndex];
+          const to = stars[toIndex];
+          p.line(from.x, from.y, to.x, to.y);
+        }
+        // 今まさに伸びている線（1本だけ）
+        if (completed < lines.length) {
+          const { fromIndex, toIndex } = lines[completed];
+          const from = stars[fromIndex];
+          const to = stars[toIndex];
+          p.line(
+            from.x,
+            from.y,
+            p.lerp(from.x, to.x, t),
+            p.lerp(from.y, to.y, t)
+          );
+        }
+      };
+
       p.setup = () => {
         p.createCanvas(width, height);
         const dpr = Math.min(2, window.devicePixelRatio);
         p.pixelDensity(dpr);
         p.background('#0b1021');
       };
-
-      let lineProgress = 0; //アニメーションの時間管理
-
-const drawAnimatedLines = () => {
-  lineProgress += 0.02;
-  lineProgress = Math.min(lineProgress, lines.length);
-
-  const completed = Math.floor(lineProgress);
-  const t = lineProgress - completed;
-
-  p.stroke(120, 170, 255);
-  p.strokeWeight(2);
-
-  // 完全に描き終わった線
-  for (let i = 0; i < completed; i++) {
-    const { fromIndex, toIndex } = lines[i];
-    const from = stars[fromIndex];
-    const to = stars[toIndex];
-    p.line(from.x, from.y, to.x, to.y);
-  }
-
-  // 今まさに伸びている線（1本だけ）
-  if (completed < lines.length) {
-    const { fromIndex, toIndex } = lines[completed];
-    const from = stars[fromIndex];
-    const to = stars[toIndex];
-
-    p.line(
-      from.x,
-      from.y,
-      p.lerp(from.x, to.x, t),
-      p.lerp(from.y, to.y, t)
-    );
-  }
-};
-
-
 
       p.draw = () => {
         p.background('#0b1021');
@@ -106,11 +98,10 @@ const drawAnimatedLines = () => {
           p.ellipse(star.x, star.y, Math.max(6, star.size));
         }
       };
-    };
+    };//p5.jsの終わり
   }, [width, height, lines, stars]);
 
   const containerRef = useP5(sketch);
-
   const handleComplete = () => {
     const name = constellationName.trim();
     if (!name) {
@@ -120,6 +111,7 @@ const drawAnimatedLines = () => {
     onComplete(name, lines);
   };
 
+  //UIの描画
   return (
     <div className="constellation-creator">
       <header className="creator-header">

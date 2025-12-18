@@ -363,6 +363,7 @@ function App() {
 
   // ----- HOME UI -----
   const renderHomeUI = () => {
+    
     const canCreateConstellation = unassignedEntries.length >= 7;
 
     const currentGroupEntries = (() => {
@@ -479,25 +480,8 @@ function App() {
   );
 
   // ----- CONSTELLATION CREATOR -----
+  //switsh文で呼び出し
   const renderConstellationCreator = () => {
-    // 7件以上の未割り当てエントリが必要
-    if (unassignedEntries.length < 7) {
-      return (
-        <div className="ui-entry">
-          <header className="page-header">
-            <button className="btn-back" onClick={() => setView('home')}>
-              ← もどる
-            </button>
-            <h1>星座を作成</h1>
-          </header>
-          <div className="entry-form-container">
-            <p>星座を作成するには7日分の記録が必要です。</p>
-            <p>あと {7 - unassignedEntries.length} 日分記録してください。</p>
-          </div>
-        </div>
-      );
-    }
-
     // 7件のエントリを使って星座作成
     const entriesToUse = unassignedEntries.slice(0, 7);
 
@@ -505,12 +489,11 @@ function App() {
       // DBに星座を保存（線データも含む）
       const entryIds = entriesToUse.map(e => e.id!);
       await createConstellation(name, entryIds, lines);
-      
       // データを再読み込みしてホームへ
       await loadData();
       setView('home');
     };
-
+    
     return (
       <ConstellationCreator
         entries={entriesToUse}
