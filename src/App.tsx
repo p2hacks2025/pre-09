@@ -42,7 +42,7 @@ function App() {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 400);
 
   // ----- デバッグモード -----
-  const [debugMode, setDebugMode] = useState(true);
+  const [debugMode, setDebugMode] = useState(false);
 
   // 星座1つあたりの幅（px）- 共通定数を使用
   const CONSTELLATION_WIDTH = CANVAS_CONSTANTS.CONSTELLATION_WIDTH;
@@ -624,6 +624,13 @@ function App() {
           />
         )}
       </div>
+
+      {/* デバッグモード切り替えボタン（右下・透明） */}
+      <button
+        className="debug-toggle-button"
+        onClick={() => setDebugMode(prev => !prev)}
+        aria-label="デバッグモード切り替え"
+      />
     </div>
   );
 }
