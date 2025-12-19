@@ -262,6 +262,24 @@ function App() {
     setCurrentConstellationIndex(allConstellations.length);
   }, []);
 
+  //星座アニメーション完了時のハンドラー
+  const handleAnimationComplete = useCallback((fromGlobalIdx: number, toGlobalIdx: number) => {
+    // すでに同じ線が存在するかチェック（重複防止）
+    setCanvasLines(prev => {
+      const exists = prev.some(
+        line => (line.fromIndex === fromGlobalIdx && line.toIndex === toGlobalIdx) ||
+                (line.fromIndex === toGlobalIdx && line.toIndex === fromGlobalIdx)
+      );
+      if (!exists) {
+        // Canvas上の線データに正式に追加
+        // これにより、p5の animatingLine が null になっても、通常の線として描画され続ける
+        console.log("Animation complete: Line added to canvas.");
+        return [...prev, { fromIndex: fromGlobalIdx, toIndex: toGlobalIdx }];
+      }
+      return prev;
+    });
+  }, []);
+
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -584,6 +602,7 @@ function App() {
           cameraOffset={cameraOffset}
           newStarEffect={newStarEffect}
           onStarClick={handleStarClick}
+          onAnimationComplete={handleAnimationComplete}
           width={window.innerWidth}
           height={window.innerHeight}
           debugMode={debugMode}
