@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { AppView, DiaryEntry as DiaryEntryType, Constellation, Star, StarPosition, ConstellationLine } from './types';
+import type { AppView, DiaryEntry as DiaryEntryType, Constellation, Star, ConstellationLine } from './types';
 import { CANVAS_CONSTANTS } from './types';
 import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations, addDiaryEntry, createConstellation, resetAllData, createTestData } from './lib/db';
+import { findBestMatch, type MatchResult } from './lib/constellationMatcher';
+import { referenceConstellations } from './data/constellations';
 import ConstellationCanvas from './components/ConstellationCanvas/ConstellationCanvas';
 import ConstellationCreator from './components/ConstellationCreator/ConstellationCreator';
 import DiaryEntryComponent from './components/DiaryEntry/DiaryEntry';
@@ -64,6 +66,9 @@ function App() {
 
   // ----- 星座の線データ -----
   const [canvasLines, setCanvasLines] = useState<ConstellationLine[]>([]);
+
+  // ----- 星座判定結果（星座インデックス → 判定結果）-----
+  const [matchResults, setMatchResults] = useState<Map<number, MatchResult>>(new Map());
 
   // DiaryEntry を ID で引けるようにマッピング
   const entryById = useMemo(() => {
@@ -149,14 +154,14 @@ function App() {
 
     // エントリIDから星座グループインデックスへのマッピングを作成
     const entryIdToGroupIndex = new Map<number, number>();
-    
+
     // 完成した星座に属するエントリをマッピング
     allConstellations.forEach((constellation, constellationIndex) => {
       constellation.entryIds.forEach((entryId) => {
         entryIdToGroupIndex.set(entryId, constellationIndex);
       });
     });
-    
+
     // 未割り当てエントリは最後のグループ（作成中の星座）に配置
     const unassignedGroupIndex = allConstellations.length;
     unassigned.forEach((entry) => {
@@ -226,10 +231,10 @@ function App() {
     const lines: ConstellationLine[] = [];
     allConstellations.forEach((constellation) => {
       if (!constellation.lines) return;
-      
+
       // この星座のエントリIDをグローバルインデックスに変換
       const globalIndices = constellation.entryIds.map(id => entryIdToGlobalIndex.get(id) ?? -1);
-      
+
       constellation.lines.forEach((line) => {
         const fromGlobal = globalIndices[line.fromIndex];
         const toGlobal = globalIndices[line.toIndex];
@@ -239,6 +244,26 @@ function App() {
       });
     });
     setCanvasLines(lines);
+
+    // DBに保存された判定結果からmatchResultsを復元
+    const restoredMatchResults = new Map<number, MatchResult>();
+    allConstellations.forEach((constellation, index) => {
+      if (constellation.matchedConstellationId) {
+        // constellations.tsから該当の星座データを取得
+        const refConstellation = referenceConstellations.find(
+          c => c.id === constellation.matchedConstellationId
+        );
+        if (refConstellation) {
+          restoredMatchResults.set(index, {
+            constellationId: refConstellation.id,
+            constellationName: refConstellation.name,
+            similarity: 1, // 保存済みなので類似度は1とする
+            svgPath: refConstellation.svgPath,
+          });
+        }
+      }
+    });
+    setMatchResults(restoredMatchResults);
 
     // リロード時は作成中の星座（未割り当てエントリのグループ）から表示開始
     setCurrentConstellationIndex(allConstellations.length);
@@ -294,10 +319,10 @@ function App() {
   // ============================================
   // DiaryEntryからのデータ受け取り → DB保存
   // ============================================
-  const handleDiaryEntryComplete = async (data: { 
-    photoUrl: string; 
-    memo: string; 
-    starPosition: { x: number; y: number } 
+  const handleDiaryEntryComplete = async (data: {
+    photoUrl: string;
+    memo: string;
+    starPosition: { x: number; y: number }
   }) => {
     // photoUrlからBlobを取得
     const response = await fetch(data.photoUrl);
@@ -363,7 +388,7 @@ function App() {
 
   // ----- HOME UI -----
   const renderHomeUI = () => {
-    
+
     const canCreateConstellation = unassignedEntries.length >= 7;
 
     const currentGroupEntries = (() => {
@@ -387,17 +412,17 @@ function App() {
       if (!oldestEntry) return '';
       const monthIndex = parseInt(oldestEntry.date.slice(5, 7), 10) - 1;
       const monthNames = [
-        'January','February','March','April','May','June','July',
-        'August','September','October','November','December',
+        'January', 'February', 'March', 'April', 'May', 'June', 'July',
+        'August', 'September', 'October', 'November', 'December',
       ];
       return monthNames[monthIndex] ?? '';
     })();
 
     // 現在表示中の星座名を取得
-    const currentConstellationName = constellations[currentConstellationIndex]?.name 
-      || (currentConstellationIndex === constellations.length && unassignedEntries.length > 0 
-          ? `作成中 (${unassignedEntries.length}/7)` 
-          : '');
+    const currentConstellationName = constellations[currentConstellationIndex]?.name
+      || (currentConstellationIndex === constellations.length && unassignedEntries.length > 0
+        ? `作成中 (${unassignedEntries.length}/7)`
+        : '');
 
     // テストデータ作成
     const handleCreateTestData = async () => {
@@ -411,6 +436,25 @@ function App() {
       await resetAllData();
       await loadData();
       setCurrentConstellationIndex(0);
+      setMatchResults(new Map());
+    };
+
+    // 星座判定（デバッグ用：未割り当て星を判定）
+    const handleConstellationMatch = () => {
+      // 未割り当てエントリの点群を取得
+      const userPoints = unassignedEntries.map(e => e.starPosition);
+      if (userPoints.length === 0) {
+        alert('判定する星がありません');
+        return;
+      }
+      const result = findBestMatch(userPoints, 0.1);
+      if (result) {
+        // 未割り当て星は最後のインデックス（constellations.length）に表示
+        setMatchResults(prev => new Map(prev).set(constellations.length, result));
+        console.log(`星座判定結果: ${result.constellationName} (${(result.similarity * 100).toFixed(1)}%)`);
+      } else {
+        console.log('マッチする星座が見つかりませんでした');
+      }
     };
 
     return (
@@ -463,8 +507,16 @@ function App() {
             <div className="debug-buttons">
               <button onClick={handleCreateTestData}>🧪 テストデータ作成</button>
               <button onClick={handleResetData}>🗑️ リセット</button>
+              <button onClick={handleConstellationMatch}>🔍 星座判定</button>
               <button onClick={() => setDebugMode(false)}>❌ デバッグ非表示</button>
             </div>
+            {matchResults.size > 0 && (
+              <div className="debug-match-result">
+                <p>判定結果: {Array.from(matchResults.entries()).map(([idx, r]) =>
+                  `[${idx}] ${r.constellationName} (${(r.similarity * 100).toFixed(1)}%)`
+                ).join(', ')}</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -486,14 +538,29 @@ function App() {
     const entriesToUse = unassignedEntries.slice(0, 7);
 
     const handleConstellationComplete = async (name: string, lines: ConstellationLine[]) => {
-      // DBに星座を保存（線データも含む）
+      // 判定用に現在の点群を保存（保存前に取得）
+      const userPoints = entriesToUse.map(e => e.starPosition);
+
+      // 星座判定を実行
+      const result = findBestMatch(userPoints, 0.1);
+      const matchedId = result?.constellationId;
+
+      // DBに星座を保存（線データと判定結果も含む）
       const entryIds = entriesToUse.map(e => e.id!);
-      await createConstellation(name, entryIds, lines);
+      await createConstellation(name, entryIds, lines, matchedId);
+
+      if (result) {
+        // 新しい星座のインデックス（現在のconstellations.length）に紐付け
+        const newConstellationIndex = constellations.length;
+        setMatchResults(prev => new Map(prev).set(newConstellationIndex, result));
+        console.log(`星座判定結果: ${result.constellationName} (${(result.similarity * 100).toFixed(1)}%)`);
+      }
+
       // データを再読み込みしてホームへ
       await loadData();
       setView('home');
     };
-    
+
     return (
       <ConstellationCreator
         entries={entriesToUse}
@@ -530,15 +597,37 @@ function App() {
           constellationWidth={CONSTELLATION_WIDTH}
           constellationCount={constellations.length}
         />
+        {/* 星座判定結果のSVGオーバーレイ（各星座に対応） */}
+        {Array.from(matchResults.entries()).map(([constellationIndex, result]) => (
+          <div
+            key={constellationIndex}
+            className="constellation-svg-overlay"
+            style={{
+              position: 'absolute',
+              left: `${constellationIndex * CONSTELLATION_WIDTH + cameraOffset + CANVAS_CONSTANTS.PADDING_X}px`,
+              top: `${CANVAS_CONSTANTS.PADDING_Y_TOP}px`,
+              width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
+              height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
+              opacity: 0.3,
+              pointerEvents: 'none',
+            }}
+          >
+            <img
+              src={result.svgPath}
+              alt={result.constellationName}
+              style={{ width: '100%', height: '100%' }}
+            />
+          </div>
+        ))}
       </div>
 
       {/* Layer 2: UIOverlay */}
       <div className="layer-ui">
         {renderUIOverlay()}
         {selectedEntry && (
-          <StarDetail 
-            entry={selectedEntry} 
-            onClose={() => setSelectedEntry(null)} 
+          <StarDetail
+            entry={selectedEntry}
+            onClose={() => setSelectedEntry(null)}
           />
         )}
       </div>
