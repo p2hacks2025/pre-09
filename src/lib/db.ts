@@ -192,6 +192,7 @@ export async function resetAllData(): Promise<void> {
 
 /**
  * テスト用の仮データを生成する（3つの星座 + 未割り当て星）
+ * 各星座は実際のSVG星座データ（くらげ座、イルカ座、さそり座）に基づく点群を使用
  */
 export async function createTestData(): Promise<void> {
   // まずリセット
@@ -225,92 +226,93 @@ export async function createTestData(): Promise<void> {
     return memo.slice(0, targetLength);
   };
 
-  // 星座1: 「希望の星」（7つの星）
+  // 星座1: 「くらげ座」（7つの星）- 実際のくらげ座の点群データを使用
   const constellation1Entries: number[] = [];
-  const positions1 = [
-    { x: 0.2, y: 0.3 },
-    { x: 0.4, y: 0.15 },
-    { x: 0.6, y: 0.25 },
-    { x: 0.8, y: 0.2 },
-    { x: 0.3, y: 0.6 },
-    { x: 0.5, y: 0.7 },
-    { x: 0.7, y: 0.55 },
+  const kuragePositions = [
+    { x: 0.55, y: 0.08 },  // 傘の頂点
+    { x: 0.28, y: 0.15 },  // 傘の左側
+    { x: 0.78, y: 0.18 },  // 傘の右側
+    { x: 0.50, y: 0.45 },  // 触手の分岐点
+    { x: 0.12, y: 0.85 },  // 左の触手先端
+    { x: 0.31, y: 0.98 },  // 中央の触手先端
+    { x: 0.71, y: 0.88 },  // 右の触手先端
   ];
   for (let i = 0; i < 7; i++) {
     const id = await addDiaryEntry(
-      formatDate(2025, 11, i + 1),
+      formatDate(2025, 8, i + 1),
       dummyBlob,
-      makeMemo(`星座1-${i + 1}`),
-      positions1[i]
+      makeMemo(`くらげ座-${i + 1}`),
+      kuragePositions[i]
     );
     constellation1Entries.push(id);
   }
-  await createConstellation('星のカービィ', constellation1Entries, [
-    { fromIndex: 0, toIndex: 1 },
-    { fromIndex: 1, toIndex: 2 },
-    { fromIndex: 2, toIndex: 3 },
-    { fromIndex: 1, toIndex: 4 },
-    { fromIndex: 4, toIndex: 5 },
-    { fromIndex: 5, toIndex: 6 },
-  ]);
-
-  // 星座2: 「夢の軌跡」（7つの星）
-  const constellation2Entries: number[] = [];
-  const positions2 = [
-    { x: 0.15, y: 0.2 },
-    { x: 0.35, y: 0.35 },
-    { x: 0.5, y: 0.15 },
-    { x: 0.65, y: 0.4 },
-    { x: 0.8, y: 0.25 },
-    { x: 0.4, y: 0.65 },
-    { x: 0.6, y: 0.75 },
-  ];
-  for (let i = 0; i < 7; i++) {
-    const id = await addDiaryEntry(
-      formatDate(2025, 11, i + 8),
-      dummyBlob,
-      makeMemo(`星座2-${i + 1}`),
-      positions2[i]
-    );
-    constellation2Entries.push(id);
-  }
-  await createConstellation('おうし座', constellation2Entries, [
-    { fromIndex: 0, toIndex: 1 },
-    { fromIndex: 1, toIndex: 2 },
-    { fromIndex: 2, toIndex: 3 },
-    { fromIndex: 3, toIndex: 4 },
-    { fromIndex: 1, toIndex: 5 },
-    { fromIndex: 5, toIndex: 6 },
-  ]);
-
-  // 星座3: 「キラキラ」（7つの星）
-  const constellation3Entries: number[] = [];
-  const positions3 = [
-    { x: 0.5, y: 0.1 },
-    { x: 0.3, y: 0.3 },
-    { x: 0.7, y: 0.3 },
-    { x: 0.2, y: 0.5 },
-    { x: 0.8, y: 0.5 },
-    { x: 0.4, y: 0.7 },
-    { x: 0.6, y: 0.7 },
-  ];
-  for (let i = 0; i < 7; i++) {
-    const id = await addDiaryEntry(
-      formatDate(2025, 11, 15 + i),
-      dummyBlob,
-      makeMemo(`星座3-${i + 1}`),
-      positions3[i]
-    );
-    constellation3Entries.push(id);
-  }
-  await createConstellation('星野リゾート', constellation3Entries, [
+  await createConstellation('くらげ座', constellation1Entries, [
     { fromIndex: 0, toIndex: 1 },
     { fromIndex: 0, toIndex: 2 },
     { fromIndex: 1, toIndex: 3 },
+    { fromIndex: 2, toIndex: 3 },
+    { fromIndex: 3, toIndex: 4 },
+    { fromIndex: 3, toIndex: 5 },
+    { fromIndex: 3, toIndex: 6 },
+  ], 'kurage');
+
+  // 星座2: 「イルカ座」（7つの星）- 実際のイルカ座の点群データを使用
+  const constellation2Entries: number[] = [];
+  const irukaPositions = [
+    { x: 0.12, y: 0.09 },  // 頭部
+    { x: 0.28, y: 0.16 },  // 口先
+    { x: 0.51, y: 0.42 },  // 体の中央上部
+    { x: 0.91, y: 0.31 },  // 背びれ付近
+    { x: 0.67, y: 0.79 },  // 尾の付け根
+    { x: 0.83, y: 0.93 },  // 尾の先端上
+    { x: 0.57, y: 0.94 },  // 尾の先端下
+  ];
+  for (let i = 0; i < 7; i++) {
+    const id = await addDiaryEntry(
+      formatDate(2025, 9, i + 8),
+      dummyBlob,
+      makeMemo(`イルカ座-${i + 1}`),
+      irukaPositions[i]
+    );
+    constellation2Entries.push(id);
+  }
+  await createConstellation('イルカ座', constellation2Entries, [
+    { fromIndex: 0, toIndex: 1 },
+    { fromIndex: 1, toIndex: 2 },
+    { fromIndex: 2, toIndex: 3 },
     { fromIndex: 2, toIndex: 4 },
-    { fromIndex: 1, toIndex: 5 },
-    { fromIndex: 2, toIndex: 6 },
-  ]);
+    { fromIndex: 4, toIndex: 5 },
+    { fromIndex: 4, toIndex: 6 },
+  ], 'iruka');
+
+  // 星座3: 「さそり座」（7つの星）- 実際のさそり座の点群データを使用
+  const constellation3Entries: number[] = [];
+  const sasoriPositions = [
+    { x: 0.37, y: 0.20 },  // 右の爪
+    { x: 0.15, y: 0.40 },  // 左の爪
+    { x: 0.52, y: 0.39 },  // 頭部（星マーク）
+    { x: 0.24, y: 0.50 },  // 体の左側
+    { x: 0.37, y: 0.74 },  // 体の中央
+    { x: 0.90, y: 0.46 },  // 尾の先端付近
+    { x: 0.70, y: 0.99 },  // 尾の先端
+  ];
+  for (let i = 0; i < 7; i++) {
+    const id = await addDiaryEntry(
+      formatDate(2025, 10, 15 + i),
+      dummyBlob,
+      makeMemo(`さそり座-${i + 1}`),
+      sasoriPositions[i]
+    );
+    constellation3Entries.push(id);
+  }
+  await createConstellation('さそり座', constellation3Entries, [
+    { fromIndex: 0, toIndex: 2 },
+    { fromIndex: 1, toIndex: 3 },
+    { fromIndex: 2, toIndex: 5 },
+    { fromIndex: 3, toIndex: 4 },
+    { fromIndex: 4, toIndex: 6 },
+    { fromIndex: 5, toIndex: 6 },
+  ], 'sasori');
 
   // 未割り当ての星（6つ）
   const unassignedPositions = [
@@ -323,12 +325,12 @@ export async function createTestData(): Promise<void> {
   ];
   for (let i = 0; i < 6; i++) {
     await addDiaryEntry(
-      formatDate(2025, 11, 22 + i),
+      formatDate(2025, 12, 6 + i),
       dummyBlob,
       makeMemo(`未割り当て-${i + 1}`),
       unassignedPositions[i]
     );
   }
 
-  console.log('✅ Test data created: 3 constellations + 6 unassigned entries');
+  console.log('✅ Test data created: 3 constellations (くらげ座, イルカ座, さそり座) + 6 unassigned entries');
 }
