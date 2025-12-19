@@ -236,20 +236,34 @@ function App() {
         }
       });
     });
+
     const unassignedIds = new Set(unassigned.map(u => u.id));
   
   // allEntriesを走査して、隣り合う星が両方「未割り当て」なら線を引く
     for (let i = 1; i < allEntries.length; i++) {
       const prev = allEntries[i - 1];
       const curr = allEntries[i];
-      
+
       if (unassignedIds.has(prev.id) && unassignedIds.has(curr.id)) {
+        const prevGroup = Math.floor((i - 1) / 7);
+        const currGroup = Math.floor(i / 7);
+        if (prevGroup === currGroup) {
         // 両方のIDが entryIdToGlobalIndex に存在することを確認して push
         const fromIdx = entryIdToGlobalIndex.get(prev.id!) ?? -1;
         const toIdx = entryIdToGlobalIndex.get(curr.id!) ?? -1;
+        //ここのコードくそだよ
+        const isVeryNew = new Date().getTime() - new Date(curr.createdAt).getTime() < 100; // 1秒以内
+        const isLastEdge = (i === allEntries.length - 1);
+
+      if (isLastEdge && isVeryNew) {//一番最新の線が1秒以内につくられたならスキップ
+        // 新しく作った直後だけは React 側で線を引かない！
+        // これにより、p5側のアニメーションが優先される
+        continue;
+      }
         
-        if (fromIdx !== -1 && toIdx !== -1) {
-          lines.push({ fromIndex: fromIdx, toIndex: toIdx });
+          if (fromIdx !== -1 && toIdx !== -1) {
+            lines.push({ fromIndex: fromIdx, toIndex: toIdx });
+          }
         }
       }
     }

@@ -160,6 +160,7 @@ export function ConstellationCanvas({
       let newestStar: Star | null = null;
       let previousStar: Star | null = null;
       let lastKnownStarCount = starsRef.current.length;
+      let isWaitingForReactUpdate = false;
 
       p.setup = () => {
         p.createCanvas(width, height);
@@ -215,7 +216,8 @@ export function ConstellationCanvas({
             newestStar = sorted[0];
             previousStar = sorted[1];
 
-            if (newestStar && previousStar) {
+            const isNewConstellationFirstStar = (currentStars.length % 7 === 1);
+            if (newestStar && previousStar && !isNewConstellationFirstStar) {
               // 線を引くアニメーションの準備
               animatingLine = {
                 fromId: previousStar.entryId, // IDを保持
@@ -258,26 +260,42 @@ export function ConstellationCanvas({
 
         //星座がつながるアニメーション
         if (animatingLine) {
-          if (animProgress < 1) {// アニメーション中ならば
-            animProgress += 0.01; // スピード
-            const t = p.constrain(animProgress, 0, 1);
+          const t = p.constrain(animProgress, 0, 1);
+          const curX = p.lerp(animatingLine.x1, animatingLine.x2, t);
+          const curY = p.lerp(animatingLine.y1, animatingLine.y2, t);
+          
+          // 1. 線を引く（アニメーション中も、終わった後の待機中もずっと描く）
+          p.stroke(255, 255, 200, 200); 
+          p.strokeWeight(2);
+          p.line(animatingLine.x1, animatingLine.y1, curX, curY);
 
-            const curX = p.lerp(animatingLine.x1, animatingLine.x2, t);
-            const curY = p.lerp(animatingLine.y1, animatingLine.y2, t);
-            
-            p.stroke(255, 255, 200, 200);
-            p.strokeWeight(2);
-            p.line(animatingLine.x1, animatingLine.y1, curX, curY);
-          } else {
-            const fromIndex = currentStars.findIndex(s => s.entryId === animatingLine?.fromId);
-            const toIndex = currentStars.findIndex(s => s.entryId === animatingLine?.toId);
-            if (fromIndex !== -1 && toIndex !== -1) {
-              // 見つかったインデックスを親に渡す
-              animationCompleteRef.current?.(fromIndex, toIndex);
+          if (!isWaitingForReactUpdate) {
+            if (animProgress < 1) {
+              animProgress += 0.01;
+            } else {
+              // 2. 100%になったら一度だけ親に報告
+              isWaitingForReactUpdate = true;
+              const fromIndex = currentStars.findIndex(s => s.entryId === animatingLine?.fromId);
+              const toIndex = currentStars.findIndex(s => s.entryId === animatingLine?.toId);
+              if (fromIndex !== -1 && toIndex !== -1) {
+                animationCompleteRef.current?.(fromIndex, toIndex);
+              }
             }
-            animatingLine = null; // アニメーション用の変数は役目を終えたので消す
-            animProgress = 0;
-            lastKnownStarCount = currentStars.length;
+          } else {
+            // 3. 親(React)の lines 配列に自分の線が追加されたか監視する
+            const isLinePropagated = currentLines.some(l => {
+              const fIdx = currentStars.findIndex(s => s.entryId === animatingLine?.fromId);
+              const tIdx = currentStars.findIndex(s => s.entryId === animatingLine?.toId);
+              return (l.fromIndex === fIdx && l.toIndex === tIdx);
+            });
+
+            // 4. React側が描き始めたら、p5のアニメーションモードを終了
+            if (isLinePropagated) {
+              animatingLine = null;
+              animProgress = 0;
+              isWaitingForReactUpdate = false;
+              lastKnownStarCount = currentStars.length;
+            }
           }
         }
 
