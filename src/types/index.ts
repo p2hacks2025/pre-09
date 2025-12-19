@@ -66,6 +66,8 @@ export interface Constellation {
   entryIds: number[];
   /** 星をつなぐ線の配列 */
   lines: ConstellationLine[];
+  /** マッチした正解星座のID（判定結果） */
+  matchedConstellationId?: string;
   /** 作成日時 */
   createdAt: Date;
 }
