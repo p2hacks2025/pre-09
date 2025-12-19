@@ -156,9 +156,10 @@ export function ConstellationCanvas({
       
       //星座アニメーションにつかう
       let animProgress = 0; // 0（開始）から 1（完了）まで増える数字
-      let animatingLine: { x1: number; y1: number; x2: number; y2: number } | null = null;
+      let animatingLine: { fromId: number; toId: number; x1: number; y1: number; x2: number; y2: number } | null = null;
       let newestStar: Star | null = null;
       let previousStar: Star | null = null;
+      let lastKnownStarCount = starsRef.current.length;
 
       p.setup = () => {
         p.createCanvas(width, height);
@@ -206,6 +207,32 @@ export function ConstellationCanvas({
         const constWidth = constellationWidthRef.current;
         const constCount = constellationCountRef.current;
 
+        if (currentStars.length > lastKnownStarCount) {
+          // 最初の起動時（0から増えた時）はアニメーションさせないためのガード
+          if (lastKnownStarCount > 0) {
+            // IDでソートして最新の2つを特定
+            const sorted = [...currentStars].sort((a, b) => b.entryId - a.entryId);
+            newestStar = sorted[0];
+            previousStar = sorted[1];
+
+            if (newestStar && previousStar) {
+              // 線を引くアニメーションの準備
+              animatingLine = {
+                fromId: previousStar.entryId, // IDを保持
+                toId: newestStar.entryId,
+                x1: previousStar.x,
+                y1: previousStar.y,
+                x2: newestStar.x,
+                y2: newestStar.y
+              };
+              animProgress = 0;
+            }
+          }
+          // 数を同期させる（これ以上 if 文に入らないようにする）
+          lastKnownStarCount = currentStars.length;
+        }
+
+
         // 背景（紫系のグラデーション）
         const ctx = p.drawingContext as CanvasRenderingContext2D;
         ctx.save();
@@ -231,7 +258,7 @@ export function ConstellationCanvas({
 
         //星座がつながるアニメーション
         if (animatingLine) {
-          if (animProgress < 1) {
+          if (animProgress < 1) {// アニメーション中ならば
             animProgress += 0.01; // スピード
             const t = p.constrain(animProgress, 0, 1);
 
@@ -242,14 +269,15 @@ export function ConstellationCanvas({
             p.strokeWeight(2);
             p.line(animatingLine.x1, animatingLine.y1, curX, curY);
           } else {
-            const fromIdx = starsRef.current.findIndex(s => s.x === animatingLine?.x1 && s.y === animatingLine?.y1);
-            const toIdx = starsRef.current.findIndex(s => s.x === animatingLine?.x2 && s.y === animatingLine?.y2);
-            if (fromIdx !== -1 && toIdx !== -1) {
-            // App.tsx の setCanvasLines を動かすための関数を呼ぶ
-              animationCompleteRef.current?.(fromIdx, toIdx)
+            const fromIndex = currentStars.findIndex(s => s.entryId === animatingLine?.fromId);
+            const toIndex = currentStars.findIndex(s => s.entryId === animatingLine?.toId);
+            if (fromIndex !== -1 && toIndex !== -1) {
+              // 見つかったインデックスを親に渡す
+              animationCompleteRef.current?.(fromIndex, toIndex);
             }
             animatingLine = null; // アニメーション用の変数は役目を終えたので消す
             animProgress = 0;
+            lastKnownStarCount = currentStars.length;
           }
         }
 
@@ -403,25 +431,6 @@ export function ConstellationCanvas({
           flashX = currentEffect.x;
           flashY = currentEffect.y;
           flashAlpha = 255;
-        
-          //最新の星の抽出
-          if (currentStars && currentStars.length >= 2) {
-            // entryId（連番ID）で降順にソートしたコピーを作成
-            const sorted = [...currentStars].sort((a, b) => b.entryId - a.entryId);
-            newestStar = sorted[0];   // 最新
-            previousStar = sorted[1]; // 1つ前
-          }
-
-          if (newestStar && previousStar) {
-            animatingLine = {
-              x1: previousStar.x,
-              y1: previousStar.y,
-              x2: newestStar.x,
-              y2: newestStar.y
-            };
-              //現在の進捗
-              animProgress = 0;
-          }
 
           // パーティクルを生成
           for (let i = 0; i < 30; i++) {

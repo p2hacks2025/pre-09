@@ -236,6 +236,23 @@ function App() {
         }
       });
     });
+    const unassignedIds = new Set(unassigned.map(u => u.id));
+  
+  // allEntriesを走査して、隣り合う星が両方「未割り当て」なら線を引く
+    for (let i = 1; i < allEntries.length; i++) {
+      const prev = allEntries[i - 1];
+      const curr = allEntries[i];
+      
+      if (unassignedIds.has(prev.id) && unassignedIds.has(curr.id)) {
+        // 両方のIDが entryIdToGlobalIndex に存在することを確認して push
+        const fromIdx = entryIdToGlobalIndex.get(prev.id!) ?? -1;
+        const toIdx = entryIdToGlobalIndex.get(curr.id!) ?? -1;
+        
+        if (fromIdx !== -1 && toIdx !== -1) {
+          lines.push({ fromIndex: fromIdx, toIndex: toIdx });
+        }
+      }
+    }
     setCanvasLines(lines);
 
     // DBに保存された判定結果からmatchResultsを復元
