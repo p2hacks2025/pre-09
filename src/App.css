@@ -333,3 +333,19 @@ body {
 .debug-match-result p {
   margin: 0;
 }
+
+/* ============================================
+   デバッグモード切り替えボタン（右下・透明）
+   ============================================ */
+.debug-toggle-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 200;
+  pointer-events: auto;
+}
