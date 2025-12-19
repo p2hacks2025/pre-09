@@ -144,6 +144,12 @@ export function ConstellationCanvas({
       let flashY = 0;
       let lastEffectTimestamp = 0;
       let backgroundGradient: CanvasGradient | null = null;
+      
+      //星座アニメーションにつかう
+      let animProgress = 0; // 0（開始）から 1（完了）まで増える数字
+      let animatingLine: { x1: number; y1: number; x2: number; y2: number } | null = null;
+      let newestStar: Star | null = null;
+      let previousStar: Star | null = null;
 
       p.setup = () => {
         p.createCanvas(width, height);
@@ -201,6 +207,21 @@ export function ConstellationCanvas({
         // カメラ変換を適用
         p.push();
         p.translate(currentCameraOffset, 0);
+
+        //星がつながるアニメーション
+        if (animatingLine && animProgress < 1) {
+          animProgress += 0.01; // ここがスピード。0.02ずつ足して 1 を目指す
+          
+          const t = p.constrain(animProgress, 0, 1); // 1を超えないようにガード
+          
+          // 今、どこまで伸びたかを計算
+          const curX = p.lerp(animatingLine.x1, animatingLine.x2, t);
+          const curY = p.lerp(animatingLine.y1, animatingLine.y2, t);
+          
+          // 描画
+          p.stroke(255, 255, 200, 200); // 輝くような色
+          p.line(animatingLine.x1, animatingLine.y1, curX, curY);
+        }
 
         // ===== デバッグモード: 星座領域を半透明の長方形で表示 =====
         if (isDebugMode) {
@@ -351,6 +372,25 @@ export function ConstellationCanvas({
           flashX = currentEffect.x;
           flashY = currentEffect.y;
           flashAlpha = 255;
+        
+        //最新の星の抽出
+        if (currentStars && currentStars.length >= 2) {
+          // entryId（連番ID）で降順にソートしたコピーを作成
+          const sorted = [...currentStars].sort((a, b) => b.entryId - a.entryId);
+          newestStar = sorted[0];   // 最新
+          previousStar = sorted[1]; // 1つ前
+        }
+
+        if (newestStar && previousStar) {
+          animatingLine = {
+            x1: previousStar.x,
+            y1: previousStar.y,
+            x2: newestStar.x,
+            y2: newestStar.y
+          };
+            //現在の進捗
+            animProgress = 0;
+        }
 
           // パーティクルを生成
           for (let i = 0; i < 30; i++) {
