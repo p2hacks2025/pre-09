@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AppView, DiaryEntry as DiaryEntryType, Constellation, Star, ConstellationLine } from './types';
 import { CANVAS_CONSTANTS } from './types';
 import { getAllDiaryEntries, getUnassignedEntries, getAllConstellations, addDiaryEntry, createConstellation, resetAllData, createTestData } from './lib/db';
@@ -70,14 +70,7 @@ function App() {
   // ----- 星座判定結果（星座インデックス → 判定結果）-----
   const [matchResults, setMatchResults] = useState<Map<number, MatchResult>>(new Map());
 
-  // DiaryEntry を ID で引けるようにマッピング
-  const entryById = useMemo(() => {
-    const map = new Map<number, DiaryEntryType>();
-    entries.forEach((entry) => {
-      if (entry.id !== undefined) map.set(entry.id, entry);
-    });
-    return map;
-  }, [entries]);
+  // Note: entryById was removed as it was unused
 
   // 星座の総数（未割り当てエントリも1グループとしてカウント）
   const totalConstellationGroups = constellations.length + (unassignedEntries.length > 0 ? 1 : 0);
