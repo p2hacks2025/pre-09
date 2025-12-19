@@ -53,7 +53,7 @@ const kurageConstellation: ReferenceConstellation = {
         // 右の触手先端
         { x: 0.71, y: 0.88 },
     ],
-    svgPath: '/src/assets/constellations/kurage.svg',
+    svgPath: '/constellations/kurage.svg',
 };
 
 // ============================================

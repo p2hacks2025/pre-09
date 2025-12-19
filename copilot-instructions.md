@@ -60,3 +60,23 @@ React (TypeScript) と p5.js を組み合わせた写真日記Webアプリの開
   - `style`: Formatting, CSS
   - `refactor`: Code restructuring
 * Subject: Japanese, simple and clear.
+
+# Deployment
+
+## Git Remotes
+* **origin:** `https://github.com/p2hacks2025/pre-09.git` - チーム開発用（通常のプッシュ先）
+* **deploy:** `https://github.com/iuti/pre-09.git` - デプロイ用の個人リポジトリ
+
+## デプロイ手順
+デプロイする際は、**deploy リモートにプッシュ**してください：
+```bash
+git push deploy <branch-name>
+```
+
+例：
+```bash
+git push deploy main
+git push deploy feat/constellation-matching
+```
+
+> **Note:** 通常の開発作業は `origin` にプッシュし、デプロイ時のみ `deploy` を使用します。
