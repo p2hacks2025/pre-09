@@ -66,7 +66,7 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
           margin: 0,
           zIndex: 10,
           pointerEvents: 'none'
-        }}>🌟 一番明るい星をタップ！</h2>
+        }}>🌟 最もキラキラしている点をタップ！</h2>
 
         {/* 星座描画領域と同じサイズの固定コンテナ */}
         <div style={{
