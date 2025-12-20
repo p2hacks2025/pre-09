@@ -72,8 +72,8 @@ function App() {
 
   // Note: entryById was removed as it was unused
 
-  // 星座の総数（未割り当てエントリも1グループとしてカウント）
-  const totalConstellationGroups = constellations.length + (unassignedEntries.length > 0 ? 1 : 0);
+  // 星座の総数（未割り当てエントリも1グループとしてカウント、ただし星が0個なら表示しない）
+  const totalConstellationGroups = entries.length === 0 ? 0 : constellations.length + (unassignedEntries.length > 0 ? 1 : 0);
 
   // 現在のカメラオフセットを計算（星座を画面中央に配置）
   // 星座の中心を画面中央に合わせる: 画面幅の半分 - 星座の中心位置
