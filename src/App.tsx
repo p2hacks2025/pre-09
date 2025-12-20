@@ -238,8 +238,8 @@ function App() {
     });
 
     const unassignedIds = new Set(unassigned.map(u => u.id));
-  
-  // allEntriesを走査して、隣り合う星が両方「未割り当て」なら線を引く
+
+    // allEntriesを走査して、隣り合う星が両方「未割り当て」なら線を引く
     for (let i = 1; i < allEntries.length; i++) {
       const prev = allEntries[i - 1];
       const curr = allEntries[i];
@@ -248,19 +248,19 @@ function App() {
         const prevGroup = Math.floor((i - 1) / 7);
         const currGroup = Math.floor(i / 7);
         if (prevGroup === currGroup) {
-        // 両方のIDが entryIdToGlobalIndex に存在することを確認して push
-        const fromIdx = entryIdToGlobalIndex.get(prev.id!) ?? -1;
-        const toIdx = entryIdToGlobalIndex.get(curr.id!) ?? -1;
-        //ここのコードくそだよ
-        const isVeryNew = new Date().getTime() - new Date(curr.createdAt).getTime() < 100; // 1秒以内
-        const isLastEdge = (i === allEntries.length - 1);
+          // 両方のIDが entryIdToGlobalIndex に存在することを確認して push
+          const fromIdx = entryIdToGlobalIndex.get(prev.id!) ?? -1;
+          const toIdx = entryIdToGlobalIndex.get(curr.id!) ?? -1;
+          // p5アニメーション完了まで待機（約1.7秒かかるので2秒の猶予を設定）
+          const isVeryNew = new Date().getTime() - new Date(curr.createdAt).getTime() < 2000; // 2秒以内
+          const isLastEdge = (i === allEntries.length - 1);
 
-      if (isLastEdge && isVeryNew) {//一番最新の線が1秒以内につくられたならスキップ
-        // 新しく作った直後だけは React 側で線を引かない！
-        // これにより、p5側のアニメーションが優先される
-        continue;
-      }
-        
+          if (isLastEdge && isVeryNew) {//一番最新の線が1秒以内につくられたならスキップ
+            // 新しく作った直後だけは React 側で線を引かない！
+            // これにより、p5側のアニメーションが優先される
+            continue;
+          }
+
           if (fromIdx !== -1 && toIdx !== -1) {
             lines.push({ fromIndex: fromIdx, toIndex: toIdx });
           }
@@ -299,7 +299,7 @@ function App() {
     setCanvasLines(prev => {
       const exists = prev.some(
         line => (line.fromIndex === fromGlobalIdx && line.toIndex === toGlobalIdx) ||
-                (line.fromIndex === toGlobalIdx && line.toIndex === fromGlobalIdx)
+          (line.fromIndex === toGlobalIdx && line.toIndex === fromGlobalIdx)
       );
       if (!exists) {
         // Canvas上の線データに正式に追加
@@ -576,44 +576,44 @@ function App() {
   // ----- CONSTELLATION CREATOR -----
   //switsh文で呼び出し
   // ----- CONSTELLATION CREATOR -----
-const renderConstellationCreator = () => {
-  // 7件のエントリを使って星座作成
-  const entriesToUse = unassignedEntries.slice(0, 7);
+  const renderConstellationCreator = () => {
+    // 7件のエントリを使って星座作成
+    const entriesToUse = unassignedEntries.slice(0, 7);
 
-  const handleConstellationComplete = async (name: string, lines: ConstellationLine[]) => {
-    const userPoints = entriesToUse.map(e => e.starPosition);
+    const handleConstellationComplete = async (name: string, lines: ConstellationLine[]) => {
+      const userPoints = entriesToUse.map(e => e.starPosition);
 
-    // 星座判定を実行
-    const result = findBestMatch(userPoints, 0.1);
-    const matchedId = result?.constellationId;
+      // 星座判定を実行
+      const result = findBestMatch(userPoints, 0.1);
+      const matchedId = result?.constellationId;
 
-    // DBに星座を保存
-    const entryIds = entriesToUse.map(e => e.id!);
-    await createConstellation(name, entryIds, lines, matchedId);
+      // DBに星座を保存
+      const entryIds = entriesToUse.map(e => e.id!);
+      await createConstellation(name, entryIds, lines, matchedId);
 
-    if (result) {
-      const newConstellationIndex = constellations.length;
-      setMatchResults(prev => new Map(prev).set(newConstellationIndex, result));
-    }
+      if (result) {
+        const newConstellationIndex = constellations.length;
+        setMatchResults(prev => new Map(prev).set(newConstellationIndex, result));
+      }
 
-    // データを再読み込みしてホームへ
-    await loadData();
-    setView('home');
+      // データを再読み込みしてホームへ
+      await loadData();
+      setView('home');
+    };
+
+    const canvasWidth = CANVAS_CONSTANTS.CONSTELLATION_WIDTH;
+    const canvasHeight = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT;
+
+    return (
+      <ConstellationCreator
+        entries={entriesToUse} // 修正：targetEntries から entriesToUse へ
+        width={canvasWidth}
+        height={canvasHeight}
+        onComplete={handleConstellationComplete}
+        onCancel={() => setView('home')} // 修正：setIsCreatorOpen(false) から setView('home') へ
+      />
+    );
   };
-
-  const canvasWidth = CANVAS_CONSTANTS.CONSTELLATION_WIDTH;
-  const canvasHeight = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT;
-
-  return (
-    <ConstellationCreator
-      entries={entriesToUse} // 修正：targetEntries から entriesToUse へ
-      width={canvasWidth}
-      height={canvasHeight}
-      onComplete={handleConstellationComplete}
-      onCancel={() => setView('home')} // 修正：setIsCreatorOpen(false) から setView('home') へ
-    />
-  );
-};
 
   // ============================================
   // メインレンダリング（3層構造）
