@@ -234,7 +234,6 @@ export function ConstellationCanvas({
           lastKnownStarCount = currentStars.length;
         }
 
-
         // 背景（紫系のグラデーション）
         const ctx = p.drawingContext as CanvasRenderingContext2D;
         ctx.save();
@@ -246,6 +245,33 @@ export function ConstellationCanvas({
         p.push();
         p.translate(currentCameraOffset, 0);
 
+        // ---- 新しい星のエフェクト処理 ----
+        if (currentEffect && currentEffect.timestamp !== lastEffectTimestamp) {
+          lastEffectTimestamp = currentEffect.timestamp;
+          // 座標はApp.tsx側で星と同じ計算済みなのでそのまま使用
+          flashX = currentEffect.x;
+          flashY = currentEffect.y;
+          flashAlpha = 255;
+          // パーティクルを生成
+          for (let i = 0; i < 30; i++) {
+            const angle = p.random(p.TWO_PI);
+            const speed = p.random(2, 8);
+            particles.push({
+              x: flashX,
+              y: flashY,
+              vx: p.cos(angle) * speed,
+              vy: p.sin(angle) * speed,
+              life: 60,
+              maxLife: 60,
+              size: p.random(2, 6),
+              color: {
+                r: p.random(200, 255),
+                g: p.random(200, 255),
+                b: p.random(100, 200),
+              },
+            });
+          }
+        }
         //完成済みの星座を描く
         p.stroke(lineColor);
         p.strokeWeight(2.6);
@@ -441,36 +467,7 @@ export function ConstellationCanvas({
           drawStar(p, star.x, star.y, star.size, star.brightness, star.isNewest, star.isOldest, star.dateLabel);
         }
 
-        p.pop();
-
-        // ---- 新しい星のエフェクト処理 ----
-        if (currentEffect && currentEffect.timestamp !== lastEffectTimestamp) {
-          lastEffectTimestamp = currentEffect.timestamp;
-          flashX = currentEffect.x;
-          flashY = currentEffect.y;
-          flashAlpha = 255;
-
-          // パーティクルを生成
-          for (let i = 0; i < 30; i++) {
-            const angle = p.random(p.TWO_PI);
-            const speed = p.random(2, 8);
-            particles.push({
-              x: flashX,
-              y: flashY,
-              vx: p.cos(angle) * speed,
-              vy: p.sin(angle) * speed,
-              life: 60,
-              maxLife: 60,
-              size: p.random(2, 6),
-              color: {
-                r: p.random(200, 255),
-                g: p.random(200, 255),
-                b: p.random(100, 200),
-              },
-            });
-          }
-        }
-
+        //エフェクトの続き
         // フラッシュ効果を描画
         if (flashAlpha > 0) {
           p.noStroke();
@@ -500,7 +497,7 @@ export function ConstellationCanvas({
             particles.splice(i, 1);
           }
         }
-
+        p.pop();
       };
 
       // 星を描画するヘルパー関数

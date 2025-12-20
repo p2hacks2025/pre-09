@@ -2,13 +2,15 @@
    星座作成画面
    ============================================ */
 
+ /*画面の一番外側  */
 .constellation-creator {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: rgba(8, 11, 24, 0.98);
+  background: rgba(10, 10, 32, 0.98);
 }
 
+/* 戻るなどの一番上の部分 */
 .creator-header {
   display: flex;
   align-items: center;
@@ -23,6 +25,7 @@
   color: rgba(210, 218, 240, 0.9);
 }
 
+/* p5.jsが入るキャンバスの親要素 */
 .creator-canvas-container {
   /* App.tsx の定数と同じサイズを明示的に指定 */
   width: 375px;
@@ -33,9 +36,8 @@
   /* 中央寄せ */
   position: relative;
   overflow: hidden;
-  background: #0a0f1c;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  /* 境目を確認しやすくする */
+  background: #0b1021;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* 境目を確認しやすくする */
 }
 
 .creator-canvas canvas {
@@ -48,15 +50,12 @@
 .creator-canvas {
   border-radius: 12px;
   overflow: hidden;
-  box-shadow:
+  box-shadow: 
     0 0 30px rgba(100, 150, 255, 0.2),
     0 4px 20px rgba(0, 0, 0, 0.5);
-  width: 100%;
-  /* 横幅いっぱいにしようとする */
-  max-width: 500px;
-  /* でも最大サイズはこのくらい（元のキャンバスサイズに合わせて調整） */
-  aspect-ratio: 1 / 1;
-  /* 正方形を保つ（これがないと縦長になったりする） */
+  width: 100%;             /* 横幅いっぱいにしようとする */
+  max-width: 500px;        /* でも最大サイズはこのくらい（元のキャンバスサイズに合わせて調整） */
+  aspect-ratio: 1 / 1;     /* 正方形を保つ（これがないと縦長になったりする） */
 }
 
 .creator-canvas canvas {
