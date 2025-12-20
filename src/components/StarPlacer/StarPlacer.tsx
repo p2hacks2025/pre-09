@@ -131,13 +131,21 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
           )}
 
           {starPos && (
-            <div style={{
-              position: 'absolute',
-              left: `${starPos.x * 100}%`, top: `${starPos.y * 100}%`,
-              transform: 'translate(-50%, -50%)', fontSize: '30px', pointerEvents: 'none',
-              textShadow: '0 0 10px yellow',
-              zIndex: 6
-            }}>✨</div>
+            <img
+              src="/star.svg"
+              alt="star"
+              style={{
+                position: 'absolute',
+                left: `${starPos.x * 100}%`,
+                top: `${starPos.y * 100}%`,
+                transform: 'translate(-50%, -50%)',
+                width: '40px',
+                height: '40px',
+                pointerEvents: 'none',
+                filter: 'drop-shadow(0 0 8px rgba(255, 255, 100, 0.8))',
+                zIndex: 6
+              }}
+            />
           )}
         </div>
 
