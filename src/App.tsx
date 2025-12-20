@@ -374,9 +374,11 @@ function App() {
     const today = new Date().toISOString().split('T')[0];
     await addDiaryEntry(today, blob, data.memo, data.starPosition);
 
-    // 2. 新しい星のキャンバス座標を計算
-    const canvasX = data.starPosition.x * window.innerWidth;
-    const canvasY = data.starPosition.y * window.innerHeight;
+    // 2. 新しい星のキャンバス座標を計算（星と同じ計算方式）
+    // 未割り当てグループは constellations.length 番目
+    const groupIndex = constellations.length;
+    const canvasX = (data.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH) + groupIndex * CONSTELLATION_WIDTH + CANVAS_CONSTANTS.PADDING_X;
+    const canvasY = data.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP;
 
     // 3. 新しい星をCanvasに追加（エフェクト付き）
     setNewStarEffect({
