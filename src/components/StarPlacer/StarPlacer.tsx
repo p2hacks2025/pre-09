@@ -11,6 +11,7 @@ type Props = {
 
 export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
   const [starPos, setStarPos] = useState<{ x: number, y: number } | null>(null);
+  const [cursorPos, setCursorPos] = useState<{ x: number, y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleClick = (e: MouseEvent<HTMLDivElement>) => {
@@ -23,6 +24,19 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
       x: Math.max(0, Math.min(1, x)),
       y: Math.max(0, Math.min(1, y))
     });
+  };
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setCursorPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setCursorPos(null);
   };
 
   const handleConfirm = () => {
@@ -60,13 +74,15 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
           width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
           height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
           margin: `${CANVAS_CONSTANTS.PADDING_Y_TOP}px auto 20px auto`,
-          cursor: 'crosshair',
+          cursor: 'none', // デフォルトカーソルを非表示
           overflow: 'hidden',
           borderRadius: '8px',
           border: '2px solid rgba(100, 115, 160, 0.4)'
         }}
           ref={containerRef}
           onClick={handleClick}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
         >
           <img
             src={photoUrl}
@@ -79,12 +95,48 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
               pointerEvents: 'none'
             }}
           />
+
+          {/* カスタム十字カーソル（背景反転） */}
+          {cursorPos && (
+            <div style={{
+              position: 'absolute',
+              left: cursorPos.x,
+              top: cursorPos.y,
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none',
+              mixBlendMode: 'difference',
+              zIndex: 5
+            }}>
+              {/* 縦線 */}
+              <div style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '2px',
+                height: '24px',
+                background: 'white'
+              }} />
+              {/* 横線 */}
+              <div style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '24px',
+                height: '2px',
+                background: 'white'
+              }} />
+            </div>
+          )}
+
           {starPos && (
             <div style={{
               position: 'absolute',
               left: `${starPos.x * 100}%`, top: `${starPos.y * 100}%`,
               transform: 'translate(-50%, -50%)', fontSize: '30px', pointerEvents: 'none',
-              textShadow: '0 0 10px yellow'
+              textShadow: '0 0 10px yellow',
+              zIndex: 6
             }}>✨</div>
           )}
         </div>
@@ -108,7 +160,7 @@ export default function StarPlacer({ photoUrl, onComplete, onBack }: Props) {
             onClick={handleConfirm} disabled={!starPos} className="btn btn-primary"
             style={{ opacity: starPos ? 1 : 0.5, flex: 1 }}
           >
-            決定する ✅
+            決定する
           </button>
         </div>
       </div>
