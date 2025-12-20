@@ -21,6 +21,10 @@ React (TypeScript) と p5.js を組み合わせた写真日記Webアプリの開
   - `[ComponentName].css`: スタイル（グローバルとしてimport）
 * `src/hooks/useP5.ts`: p5.js インスタンスモード用カスタムフック
 * `src/lib/db.ts`: Dexie.js データベース定義
+* `src/lib/constellationMatcher.ts`: 星座判定ロジック（点群マッチング）
+* `src/data/constellations.ts`: 正解星座データ定義（点群・SVGパス）
+* `src/types/index.ts`: 型定義（DiaryEntry, Constellation, Star等）
+* `public/constellations/`: 星座SVG画像（kurage, iruka, sasori, pizza, sword, ei, gyoza）
 
 # Coding Guidelines
 

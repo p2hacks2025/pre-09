@@ -63,7 +63,7 @@ const kurageConstellation: ReferenceConstellation = {
  */
 const irukaConstellation: ReferenceConstellation = {
     id: 'iruka',
-    name: 'イルカ座',
+    name: 'いるか座',
     points: [
         // 頭部（左上）
         { x: 0.12, y: 0.09 },
@@ -110,6 +110,114 @@ const sasoriConstellation: ReferenceConstellation = {
     svgPath: '/constellations/sasori.svg',
 };
 
+/**
+ * ピ座（ピザ）の正解データ
+ * SVGの主要な頂点から7点を抽出
+ * 座標は0-1で正規化（元のSVG viewBoxは300x400）
+ */
+const pizzaConstellation: ReferenceConstellation = {
+    id: 'pizza',
+    name: 'ピ座',
+    points: [
+        // ピザの先端（左下）
+        { x: 0.20, y: 0.90 },
+        // ピザの左端（上部）
+        { x: 0.30, y: 0.48 },
+        // ピザの上端（クラスト左）
+        { x: 0.55, y: 0.42 },
+        // ピザの上端（クラスト右）
+        { x: 0.80, y: 0.50 },
+        // トッピング1
+        { x: 0.35, y: 0.60 },
+        // トッピング2
+        { x: 0.50, y: 0.55 },
+        // トッピング3
+        { x: 0.65, y: 0.65 },
+    ],
+    svgPath: '/constellations/pizza.svg',
+};
+
+/**
+ * 座・ソード（剣）の正解データ
+ * SVGの主要な頂点から7点を抽出
+ * 座標は0-1で正規化（元のSVG viewBoxは300x400）
+ */
+const swordConstellation: ReferenceConstellation = {
+    id: 'sword',
+    name: '座・ソード',
+    points: [
+        // 剣の先端（上部）
+        { x: 0.25, y: 0.10 },
+        // 刃の左側
+        { x: 0.15, y: 0.35 },
+        // 刃の右側
+        { x: 0.35, y: 0.40 },
+        // 鍔（つば）の左
+        { x: 0.10, y: 0.60 },
+        // 鍔（つば）の右
+        { x: 0.45, y: 0.65 },
+        // 柄（つか）
+        { x: 0.25, y: 0.75 },
+        // 柄頭（ポンメル）
+        { x: 0.25, y: 0.90 },
+    ],
+    svgPath: '/constellations/sword.svg',
+};
+
+/**
+ * えい座（エイ）の正解データ
+ * SVGの主要な頂点から7点を抽出
+ * 座標は0-1で正規化（元のSVG viewBoxは72x96）
+ */
+const eiConstellation: ReferenceConstellation = {
+    id: 'ei',
+    name: 'えい座',
+    points: [
+        // 体の中央上部
+        { x: 0.55, y: 0.22 },
+        // 左の翼先端
+        { x: 0.08, y: 0.38 },
+        // 右の翼先端
+        { x: 0.92, y: 0.55 },
+        // 体の中央
+        { x: 0.50, y: 0.55 },
+        // 尾の付け根
+        { x: 0.37, y: 0.65 },
+        // 尾の中間
+        { x: 0.20, y: 0.80 },
+        // 尾の先端
+        { x: 0.05, y: 0.95 },
+    ],
+    svgPath: '/constellations/ei.svg',
+};
+
+/**
+ * ぎょう座（餃子）の正解データ
+ * SVGの主要な頂点から7点を抽出
+ * 座標は0-1で正規化（元のSVG viewBoxは300x400）
+ */
+const gyozaConstellation: ReferenceConstellation = {
+    id: 'gyoza',
+    name: 'ぎょう座',
+    points: [
+        // 左端（ひだ部分）
+        { x: 0.05, y: 0.72 },
+        // 上部のひだ（左）
+        { x: 0.25, y: 0.58 },
+        // 上部のひだ（中央）
+        { x: 0.50, y: 0.52 },
+        // 上部のひだ（右）
+        { x: 0.75, y: 0.58 },
+        // 右端
+        { x: 0.87, y: 0.65 },
+        // 底部（中央）
+        { x: 0.45, y: 0.78 },
+        // 底部（右）
+        { x: 0.65, y: 0.75 },
+    ],
+    svgPath: '/constellations/gyoza.svg',
+};
+
 // ============================================
 // 星座データリスト
 // ============================================
@@ -122,6 +230,10 @@ export const referenceConstellations: ReferenceConstellation[] = [
     kurageConstellation,
     irukaConstellation,
     sasoriConstellation,
+    pizzaConstellation,
+    swordConstellation,
+    eiConstellation,
+    gyozaConstellation,
 ];
 
 /**
