@@ -69,7 +69,7 @@ export function ConstellationCanvas({
   height = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT,
   onStarClick,
   backgroundColor = '#0a0a20',
-  starColor = '#ffffff',
+  starColor = '#e8eeffd1',
   lineColor = '#4a6fa5',
   cameraOffset = 0,
   newStarEffect = null,
@@ -122,9 +122,9 @@ export function ConstellationCanvas({
   useEffect(() => {
     constellationCountRef.current = constellationCount;
   }, [constellationCount]);
-  
+
   useEffect(() => {
-  latestOnAnimationComplete.current = onAnimationComplete;
+    latestOnAnimationComplete.current = onAnimationComplete;
   }, [onAnimationComplete]);
 
   const animationCompleteRef = latestOnAnimationComplete;
@@ -153,7 +153,7 @@ export function ConstellationCanvas({
       let flashY = 0;
       let lastEffectTimestamp = 0;
       let backgroundGradient: CanvasGradient | null = null;
-      
+
       //星座アニメーションにつかう
       let animProgress = 0; // 0（開始）から 1（完了）まで増える数字
       let animatingLine: { fromId: number; toId: number; x1: number; y1: number; x2: number; y2: number } | null = null;
@@ -186,12 +186,12 @@ export function ConstellationCanvas({
         }
 
         // 点滅しない星（小さめ＆低透明度）
-        for (let i = 0; i < 600; i++) {
+        for (let i = 0; i < 800; i++) {
           staticStars.push({
             x: p.random(-500, width + 2000),
             y: p.random(height),
             size: p.random(1.5, 2.8),
-            alpha: p.random(40, 80),
+            alpha: p.random(50, 90),
           });
         }
 
@@ -248,12 +248,12 @@ export function ConstellationCanvas({
 
         //完成済みの星座を描く
         p.stroke(lineColor);
-        p.strokeWeight(1.5);
+        p.strokeWeight(2.6);
         for (const line of currentLines) {
           const from = currentStars[line.fromIndex];
           const to = currentStars[line.toIndex];
           if (from && to) {
-            p.stroke(74, 111, 165, 180);
+            p.stroke(124, 111, 165, 170);
             p.line(from.x, from.y, to.x, to.y);
           }
         }
@@ -263,10 +263,10 @@ export function ConstellationCanvas({
           const t = p.constrain(animProgress, 0, 1);
           const curX = p.lerp(animatingLine.x1, animatingLine.x2, t);
           const curY = p.lerp(animatingLine.y1, animatingLine.y2, t);
-          
+
           // 1. 線を引く（アニメーション中も、終わった後の待機中もずっと描く）
-          p.stroke(255, 255, 200, 200); 
-          p.strokeWeight(2);
+          p.stroke(124, 111, 165, 200);
+          p.strokeWeight(3);
           p.line(animatingLine.x1, animatingLine.y1, curX, curY);
 
           if (!isWaitingForReactUpdate) {
@@ -320,7 +320,7 @@ export function ConstellationCanvas({
           for (let i = 0; i < constCount + 1; i++) { // +1 for unassigned
             const color = colors[i % colors.length];
             const x = i * constWidth;
-            
+
             // 半透明の背景
             p.noStroke();
             p.fill(color[0], color[1], color[2], color[3]);
@@ -337,14 +337,14 @@ export function ConstellationCanvas({
             p.noStroke();
             p.textSize(14);
             p.textAlign(p.LEFT, p.TOP);
-            
+
             // キャッシュキーを使って文字列を取得/作成
             const labelKey = `label_${i}`;
             if (!debugTextCache.has(labelKey)) {
               debugTextCache.set(labelKey, `星座 ${i + 1}`);
             }
             p.text(debugTextCache.get(labelKey)!, x + 10, 10);
-            
+
             p.textSize(10);
             const rangeKey = `range_${i}_${constWidth}`;
             if (!debugTextCache.has(rangeKey)) {
@@ -381,7 +381,7 @@ export function ConstellationCanvas({
         for (let i = 0; i < twinkleStars.length; i++) {
           const bgStar = twinkleStars[i];
           // frameCountを使用して計算（millis()より軽量）
-          const alpha = 40 + 70 * (1 + Math.sin(bgStar.phase + frameCount * 0.05 / (bgStar.twinkle / 1000)));
+          const alpha = 50 + 70 * (1 + Math.sin(bgStar.phase + frameCount * 0.05 / (bgStar.twinkle / 1000)));
           p.fill(200, 190, 255, alpha);
           p.ellipse(bgStar.x, bgStar.y, bgStar.size);
         }

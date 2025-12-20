@@ -37,8 +37,6 @@ export async function addDiaryEntry(
   memo: string,
   starPosition: StarPosition
 ): Promise<number> {
-  const unassigned = await getUnassignedEntries();
-  const isConnectedToPrevious = unassigned.length > 0;
   return await db.diaryEntries.add({
     date,
     photoBlob,
@@ -325,7 +323,7 @@ export async function createTestData(): Promise<void> {
     { x: 0.6, y: 0.5 },
     { x: 0.3, y: 0.7 },
   ];
-  
+
   for (let i = 0; i < 6; i++) {
     await db.diaryEntries.add({ // 直接 add を呼ぶか、修正後の addDiaryEntry を使う
       date: formatDate(2025, 12, 6 + i),
