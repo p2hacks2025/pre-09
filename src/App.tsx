@@ -529,7 +529,7 @@ function App() {
 
         {/* 下部: アクションボタン */}
         <div className="home-actions">
-          <button className="btn btn-primary" onClick={() => setView('entry')}>
+          <button className="btn " onClick={() => setView('entry')}>
             記録する
           </button>
 

@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #0b1021;
+  background: rgba(10, 10, 32, 0.98);
 }
 
 /* 戻るなどの一番上の部分 */
@@ -22,18 +22,22 @@
 .creator-header h1 {
   font-size: 1.25rem;
   font-weight: 400;
-  color: #fff;
+  color: rgba(210, 218, 240, 0.9);
 }
 
 /* p5.jsが入るキャンバスの親要素 */
 .creator-canvas-container {
   /* App.tsx の定数と同じサイズを明示的に指定 */
-  width: 375px; /* 例: CANVAS_CONSTANTS.CONSTELLATION_WIDTH の値 */
-  height: 667px; /* 例: CANVAS_CONSTANTS.CONSTELLATION_HEIGHT の値 */
-  margin: 0 auto; /* 中央寄せ */
+  width: 375px;
+  /* 例: CANVAS_CONSTANTS.CONSTELLATION_WIDTH の値 */
+  height: 667px;
+  /* 例: CANVAS_CONSTANTS.CONSTELLATION_HEIGHT の値 */
+  margin: 0 auto;
+  /* 中央寄せ */
   position: relative;
   overflow: hidden;
   background: #0b1021;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* 境目を確認しやすくする */
 }
 
 .creator-canvas canvas {
@@ -46,6 +50,9 @@
 .creator-canvas {
   border-radius: 12px;
   overflow: hidden;
+  box-shadow: 
+    0 0 30px rgba(100, 150, 255, 0.2),
+    0 4px 20px rgba(0, 0, 0, 0.5);
   width: 100%;             /* 横幅いっぱいにしようとする */
   max-width: 500px;        /* でも最大サイズはこのくらい（元のキャンバスサイズに合わせて調整） */
   aspect-ratio: 1 / 1;     /* 正方形を保つ（これがないと縦長になったりする） */
@@ -53,9 +60,10 @@
 
 .creator-canvas canvas {
   .creator-canvas canvas {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: contain; /* アスペクト比を崩さずに収める */
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+    /* アスペクト比を崩さずに収める */
   }
 }
 
@@ -65,11 +73,9 @@
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  background: linear-gradient(
-    to top,
-    rgba(10, 10, 32, 1) 0%,
-    rgba(10, 10, 32, 0.9) 100%
-  );
+  background: linear-gradient(to top,
+      rgba(10, 10, 32, 1) 0%,
+      rgba(10, 10, 32, 0.9) 100%);
 }
 
 .creator-hint {
@@ -85,9 +91,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 1;
   }
@@ -98,9 +107,9 @@
   max-width: 300px;
   padding: 1rem 1.25rem;
   background: rgba(255, 255, 255, 0.08);
-  border: 2px solid rgba(150, 200, 255, 0.3);
+  border: 2px solid rgba(130, 160, 200, 0.3);
   border-radius: 999px;
-  color: #ffffff;
+  color: rgba(210, 218, 240, 0.9);
   font-size: 1.1rem;
   text-align: center;
   transition: all 0.2s;
@@ -112,7 +121,7 @@
 
 .constellation-name-input:focus {
   outline: none;
-  border-color: rgba(150, 200, 255, 0.6);
+  border-color: rgba(130, 160, 200, 0.5);
   background: rgba(255, 255, 255, 0.12);
   box-shadow: 0 0 20px rgba(100, 150, 255, 0.2);
 }
@@ -126,12 +135,12 @@
 .btn-back {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(200, 210, 235, 0.8);
   font-size: 1rem;
   cursor: pointer;
   padding: 0.5rem;
 }
 
 .btn-back:hover {
-  color: #ffffff;
+  color: rgba(210, 218, 240, 0.9);
 }

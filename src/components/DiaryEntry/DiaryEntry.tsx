@@ -18,7 +18,7 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
     const image = new Image();
     image.addEventListener('load', () => resolve(image));
     image.addEventListener('error', (error) => reject(error));
-    image.setAttribute('crossOrigin', 'anonymous'); 
+    image.setAttribute('crossOrigin', 'anonymous');
     image.src = url;
   });
 
@@ -137,19 +137,19 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
 
   if (step === 'star' && previewUrl) {
     return (
-      <StarPlacer 
-        photoUrl={previewUrl} 
-        onComplete={handleStarComplete} 
-        onBack={() => setStep('input')} 
+      <StarPlacer
+        photoUrl={previewUrl}
+        onComplete={handleStarComplete}
+        onBack={() => setStep('input')}
       />
     );
   }
 
   if (step === 'cropping' && imageSrc) {
     return (
-      <div style={{ 
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-        background: '#333', zIndex: 1000, display: 'flex', flexDirection: 'column' 
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: '#0a0f1c', zIndex: 1000, display: 'flex', flexDirection: 'column'
       }}>
         <div style={{ position: 'relative', flex: 1, width: '100%' }}>
           {/* ここで再定義した EasyCropper を使います */}
@@ -163,34 +163,34 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
             onZoomChange={setZoom}
           />
         </div>
-        
-        <div style={{ 
-          height: '100px', background: 'white', display: 'flex', 
-          alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '0 20px' 
+
+        <div style={{
+          height: '100px', background: 'rgba(8, 11, 24, 0.95)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '0 20px'
         }}>
           <div style={{ position: 'absolute', bottom: '110px', width: '80%', display: 'flex', justifyContent: 'center' }}>
-             <input
-               type="range"
-               value={zoom}
-               min={1}
-               max={3}
-               step={0.1}
-               onChange={(e) => setZoom(Number(e.target.value))}
-               style={{ width: '100%', maxWidth: '300px' }}
-             />
+            <input
+              type="range"
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.1}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              style={{ width: '100%', maxWidth: '300px' }}
+            />
           </div>
 
-          <button 
-            onClick={() => { setStep('input'); setImageSrc(null); }} 
+          <button
+            onClick={() => { setStep('input'); setImageSrc(null); }}
             className="btn"
-            style={{ padding: '10px 20px', background: '#f0f0f0', borderRadius: '4px', border: '1px solid #ccc' }}
+            style={{ padding: '10px 20px', background: 'rgba(60, 70, 100, 0.7)', borderRadius: '4px', border: 'none', color: 'rgba(210, 218, 240, 0.9)' }}
           >
             キャンセル
           </button>
-          <button 
-            onClick={handleCropConfirm} 
+          <button
+            onClick={handleCropConfirm}
             className="btn btn-primary"
-            style={{ padding: '10px 20px', background: '#007bff', color: 'white', borderRadius: '4px', border: 'none' }}
+            style={{ padding: '10px 20px', background: 'rgba(70, 130, 230, 0.85)', color: 'rgba(230, 235, 250, 0.95)', borderRadius: '4px', border: 'none' }}
           >
             決定する
           </button>
@@ -203,7 +203,7 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(0, 0, 0, 0.5)',
+      background: 'rgba(8, 11, 24, 0.85)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'flex-start',
@@ -219,34 +219,34 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
             top: '20px',
             left: '20px',
             background: 'none', border: 'none', fontSize: '1rem',
-            cursor: 'pointer', color: '#666', zIndex: 10
+            cursor: 'pointer', color: 'rgba(160, 170, 200, 0.8)', zIndex: 10
           }}
         >
           ← もどる
         </button>
-        
-        <div style={{ 
+
+        <div style={{
           width: '100%',
           maxWidth: '500px',
           padding: '0 20px',
           margin: `${CANVAS_CONSTANTS.PADDING_Y_TOP}px auto 50px auto`
         }}>
-          <label style={{ 
-            display: 'block', 
+          <label style={{
+            display: 'block',
             width: `${CANVAS_CONSTANTS.STAR_AREA_WIDTH}px`,
             height: `${CANVAS_CONSTANTS.STAR_AREA_HEIGHT}px`,
             margin: '0 auto 20px auto',
-            border: '2px dashed #ccc', 
-            cursor: 'pointer', 
+            border: '2px dashed rgba(130, 145, 180, 0.4)',
+            cursor: 'pointer',
             borderRadius: '8px',
-            background: '#fafafa', 
+            background: 'rgba(15, 20, 35, 0.6)',
             position: 'relative',
             overflow: 'hidden'
           }}>
             {previewUrl ? (
               <img src={previewUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="Preview" />
             ) : (
-               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'rgba(160, 170, 200, 0.7)' }}>
                 タップして写真を選ぶ
               </div>
             )}
@@ -254,19 +254,19 @@ export default function DiaryEntry({ onComplete, onCancel }: Props) {
           </label>
 
           <textarea
-            style={{ width: '100%', height: '100px', padding: '10px', marginBottom: '20px', borderRadius: '4px', border: '1px solid #ccc' }}
+            style={{ width: '100%', height: '100px', padding: '10px', marginBottom: '20px', borderRadius: '4px', border: '1px solid rgba(100, 115, 160, 0.3)', background: 'rgba(18, 22, 38, 0.9)', color: 'rgba(210, 218, 240, 0.9)' }}
             placeholder="ひとことメモ..."
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
 
-          <button 
-            className="btn btn-primary" 
-            disabled={!previewUrl} 
+          <button
+            className="btn btn-primary"
+            disabled={!previewUrl}
             onClick={() => setStep('star')}
-            style={{ 
+            style={{
               width: '100%', padding: '12px', borderRadius: '4px', border: 'none',
-              background: previewUrl ? '#007bff' : '#ccc', color: 'white'
+              background: previewUrl ? 'rgba(70, 130, 230, 0.85)' : 'rgba(60, 70, 100, 0.5)', color: 'rgba(230, 235, 250, 0.95)'
             }}
           >
             次へ
