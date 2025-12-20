@@ -18,8 +18,8 @@ body,
 
 body {
   font-family: "MainFont", sans-serif;
-  background-color: #0a0a20;
-  color: #ffffff;
+  background-color: #080b18;
+  color: rgba(220, 225, 240, 0.9);
 }
 
 /* App Container */
@@ -52,7 +52,7 @@ body {
   width: 100%;
   height: 100%;
   z-index: 10;
-  background-color: #000;
+  background-color: #060810;
   transition: opacity 1.5s ease-out;
 }
 
@@ -146,7 +146,7 @@ body {
 .constellation-name {
   font-size: 2.2rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(210, 218, 240, 0.9);
 }
 
 .constellation-dots {
@@ -158,12 +158,12 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(180, 190, 220, 0.25);
   transition: background 0.2s;
 }
 
 .constellation-dots .dot.active {
-  background: #fff;
+  background: rgba(200, 210, 240, 0.8);
 }
 
 /* 下部アクション */
@@ -179,7 +179,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: rgba(10, 10, 32, 0.95);
+  background: rgba(8, 11, 24, 0.96);
 }
 
 .page-header {
@@ -192,7 +192,7 @@ body {
 .btn-back {
   background: none;
   border: none;
-  color: #fff;
+  color: rgba(210, 218, 240, 0.9);
   cursor: pointer;
 }
 
@@ -209,12 +209,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed #666;
+  border: 1px dashed rgba(130, 145, 180, 0.4);
 }
 
 .photo-select-label {
   cursor: pointer;
-  color: #999;
+  color: rgba(160, 170, 200, 0.7);
 }
 
 .photo-input-hidden {
@@ -230,9 +230,9 @@ body {
 .memo-input {
   width: 100%;
   padding: 0.5rem;
-  background: #222;
-  border: 1px solid #444;
-  color: #fff;
+  background: rgba(18, 22, 38, 0.9);
+  border: 1px solid rgba(100, 115, 160, 0.3);
+  color: rgba(210, 218, 240, 0.9);
   resize: none;
 }
 
@@ -247,7 +247,7 @@ body {
 }
 
 .star-placer-instruction {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(10, 15, 30, 0.6);
   padding: 0.5rem 1rem;
 }
 
@@ -256,8 +256,8 @@ body {
   padding: 0.75rem 1.5rem;
   border: none;
   cursor: pointer;
-  background: #444;
-  color: #fff;
+  background: rgba(4, 19, 40, 0.6);
+  color: rgba(210, 218, 240, 0.9);
 }
 
 .btn:disabled {
@@ -265,11 +265,11 @@ body {
 }
 
 .btn-primary {
-  background: rgba(0, 0, 0, 0.405);
+  background: rgba(63, 127, 255, 0.859);
 }
 
 .btn-secondary {
-  background: #f5576c;
+  background: rgba(232, 31, 101, 0.882);
 }
 
 /* ============================================
@@ -280,8 +280,8 @@ body {
   bottom: 100px;
   left: 10px;
   right: 10px;
-  background: rgba(0, 0, 0, 0.85);
-  border: 1px solid #444;
+  background: rgba(10, 15, 28, 0.92);
+  border: 1px solid rgba(100, 115, 160, 0.3);
   border-radius: 8px;
   padding: 12px;
   pointer-events: auto;
@@ -292,7 +292,7 @@ body {
   margin-bottom: 10px;
   font-size: 12px;
   font-family: monospace;
-  color: #aaa;
+  color: rgba(160, 170, 200, 0.8);
 }
 
 .debug-info p {
@@ -308,26 +308,26 @@ body {
 .debug-buttons button {
   padding: 6px 12px;
   font-size: 12px;
-  background: #333;
-  border: 1px solid #555;
-  color: #fff;
+  background: rgba(35, 45, 70, 0.8);
+  border: 1px solid rgba(100, 115, 160, 0.3);
+  color: rgba(200, 210, 235, 0.9);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .debug-buttons button:hover {
-  background: #444;
+  background: rgba(50, 60, 90, 0.8);
 }
 
 /* 判定結果表示 */
 .debug-match-result {
   margin-top: 10px;
   padding: 8px;
-  background: rgba(76, 175, 80, 0.2);
-  border: 1px solid #4caf50;
+  background: rgba(90, 140, 120, 0.2);
+  border: 1px solid rgba(120, 180, 140, 0.6);
   border-radius: 4px;
   font-size: 13px;
-  color: #4caf50;
+  color: rgba(140, 200, 160, 0.9);
 }
 
 .debug-match-result p {
