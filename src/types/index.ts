@@ -53,6 +53,7 @@ export interface DiaryEntry {
   starPosition: StarPosition;
   /** 作成日時 */
   createdAt: Date;
+  isConnectedToPrevious?: boolean;
 }
 
 /**

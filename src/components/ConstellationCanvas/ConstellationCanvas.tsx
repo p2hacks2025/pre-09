@@ -55,6 +55,8 @@ interface ConstellationCanvasProps {
   constellationWidth?: number;
   /** 星座の数（デバッグ表示用） */
   constellationCount?: number;
+  //星座完成時にコールバック
+  onAnimationComplete?: (fromIdx: number, toIdx: number) => void;
 }
 
 /**
@@ -74,6 +76,7 @@ export function ConstellationCanvas({
   debugMode = false,
   constellationWidth = CANVAS_CONSTANTS.CONSTELLATION_WIDTH,
   constellationCount = 0,
+  onAnimationComplete
 }: ConstellationCanvasProps) {
   // 外部からの値を p5 スケッチ内で参照するための ref
   const starsRef = useRef(stars);
@@ -83,6 +86,7 @@ export function ConstellationCanvas({
   const debugModeRef = useRef(debugMode);
   const constellationWidthRef = useRef(constellationWidth);
   const constellationCountRef = useRef(constellationCount);
+  const latestOnAnimationComplete = useRef(onAnimationComplete);
   //追加したよ
   const latestOnStarClick = useRef(onStarClick);
   // ref を更新（再レンダリングせずに値を更新）
@@ -118,7 +122,12 @@ export function ConstellationCanvas({
   useEffect(() => {
     constellationCountRef.current = constellationCount;
   }, [constellationCount]);
+  
+  useEffect(() => {
+  latestOnAnimationComplete.current = onAnimationComplete;
+  }, [onAnimationComplete]);
 
+  const animationCompleteRef = latestOnAnimationComplete;
   // スケッチ関数を生成（一度だけ）
   const sketch: Sketch = useMemo(() => {
     return (p: p5) => {
@@ -144,6 +153,14 @@ export function ConstellationCanvas({
       let flashY = 0;
       let lastEffectTimestamp = 0;
       let backgroundGradient: CanvasGradient | null = null;
+      
+      //星座アニメーションにつかう
+      let animProgress = 0; // 0（開始）から 1（完了）まで増える数字
+      let animatingLine: { fromId: number; toId: number; x1: number; y1: number; x2: number; y2: number } | null = null;
+      let newestStar: Star | null = null;
+      let previousStar: Star | null = null;
+      let lastKnownStarCount = starsRef.current.length;
+      let isWaitingForReactUpdate = false;
 
       p.setup = () => {
         p.createCanvas(width, height);
@@ -191,6 +208,33 @@ export function ConstellationCanvas({
         const constWidth = constellationWidthRef.current;
         const constCount = constellationCountRef.current;
 
+        if (currentStars.length > lastKnownStarCount) {
+          // 最初の起動時（0から増えた時）はアニメーションさせないためのガード
+          if (lastKnownStarCount > 0) {
+            // IDでソートして最新の2つを特定
+            const sorted = [...currentStars].sort((a, b) => b.entryId - a.entryId);
+            newestStar = sorted[0];
+            previousStar = sorted[1];
+
+            const isNewConstellationFirstStar = (currentStars.length % 7 === 1);
+            if (newestStar && previousStar && !isNewConstellationFirstStar) {
+              // 線を引くアニメーションの準備
+              animatingLine = {
+                fromId: previousStar.entryId, // IDを保持
+                toId: newestStar.entryId,
+                x1: previousStar.x,
+                y1: previousStar.y,
+                x2: newestStar.x,
+                y2: newestStar.y
+              };
+              animProgress = 0;
+            }
+          }
+          // 数を同期させる（これ以上 if 文に入らないようにする）
+          lastKnownStarCount = currentStars.length;
+        }
+
+
         // 背景（紫系のグラデーション）
         const ctx = p.drawingContext as CanvasRenderingContext2D;
         ctx.save();
@@ -201,6 +245,60 @@ export function ConstellationCanvas({
         // カメラ変換を適用
         p.push();
         p.translate(currentCameraOffset, 0);
+
+        //完成済みの星座を描く
+        p.stroke(lineColor);
+        p.strokeWeight(1.5);
+        for (const line of currentLines) {
+          const from = currentStars[line.fromIndex];
+          const to = currentStars[line.toIndex];
+          if (from && to) {
+            p.stroke(74, 111, 165, 180);
+            p.line(from.x, from.y, to.x, to.y);
+          }
+        }
+
+        //星座がつながるアニメーション
+        if (animatingLine) {
+          const t = p.constrain(animProgress, 0, 1);
+          const curX = p.lerp(animatingLine.x1, animatingLine.x2, t);
+          const curY = p.lerp(animatingLine.y1, animatingLine.y2, t);
+          
+          // 1. 線を引く（アニメーション中も、終わった後の待機中もずっと描く）
+          p.stroke(255, 255, 200, 200); 
+          p.strokeWeight(2);
+          p.line(animatingLine.x1, animatingLine.y1, curX, curY);
+
+          if (!isWaitingForReactUpdate) {
+            if (animProgress < 1) {
+              animProgress += 0.01;
+            } else {
+              // 2. 100%になったら一度だけ親に報告
+              isWaitingForReactUpdate = true;
+              const fromIndex = currentStars.findIndex(s => s.entryId === animatingLine?.fromId);
+              const toIndex = currentStars.findIndex(s => s.entryId === animatingLine?.toId);
+              if (fromIndex !== -1 && toIndex !== -1) {
+                animationCompleteRef.current?.(fromIndex, toIndex);
+              }
+            }
+          } else {
+            // 3. 親(React)の lines 配列に自分の線が追加されたか監視する
+            const isLinePropagated = currentLines.some(l => {
+              const fIdx = currentStars.findIndex(s => s.entryId === animatingLine?.fromId);
+              const tIdx = currentStars.findIndex(s => s.entryId === animatingLine?.toId);
+              return (l.fromIndex === fIdx && l.toIndex === tIdx);
+            });
+
+            // 4. React側が描き始めたら、p5のアニメーションモードを終了
+            if (isLinePropagated) {
+              animatingLine = null;
+              animProgress = 0;
+              isWaitingForReactUpdate = false;
+              lastKnownStarCount = currentStars.length;
+            }
+          }
+        }
+
 
         // ===== デバッグモード: 星座領域を半透明の長方形で表示 =====
         if (isDebugMode) {
@@ -483,7 +581,7 @@ export function ConstellationCanvas({
         }
       };
     };
-  }, [width, height, onStarClick, backgroundColor, starColor, lineColor]);
+  }, [width, height, onStarClick, backgroundColor, starColor, lineColor, animationCompleteRef]);
 
   // p5.js の ref を取得
   const containerRef = useP5(sketch);

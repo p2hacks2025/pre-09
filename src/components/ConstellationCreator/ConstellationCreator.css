@@ -24,12 +24,21 @@
 }
 
 .creator-canvas-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  min-height: 0;
+  /* App.tsx の定数と同じサイズを明示的に指定 */
+  width: 375px; /* 例: CANVAS_CONSTANTS.CONSTELLATION_WIDTH の値 */
+  height: 667px; /* 例: CANVAS_CONSTANTS.CONSTELLATION_HEIGHT の値 */
+  margin: 0 auto; /* 中央寄せ */
+  position: relative;
+  overflow: hidden;
+  background: #0b1021;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* 境目を確認しやすくする */
+}
+
+.creator-canvas canvas {
+  /* キャンバスが親要素を突き破らないように固定 */
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
 }
 
 .creator-canvas {
