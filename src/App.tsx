@@ -635,7 +635,7 @@ function App() {
           lines={canvasLines}
           cameraOffset={cameraOffset}
           newStarEffect={newStarEffect}
-          onStarClick={handleStarClick}
+          onStarClick={view === 'home' ? handleStarClick : undefined}
           onAnimationComplete={handleAnimationComplete}
           width={window.innerWidth}
           height={window.innerHeight}
