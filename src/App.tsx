@@ -575,44 +575,45 @@ function App() {
 
   // ----- CONSTELLATION CREATOR -----
   //switsh文で呼び出し
-  const renderConstellationCreator = () => {
-    // 7件のエントリを使って星座作成
-    const entriesToUse = unassignedEntries.slice(0, 7);
+  // ----- CONSTELLATION CREATOR -----
+const renderConstellationCreator = () => {
+  // 7件のエントリを使って星座作成
+  const entriesToUse = unassignedEntries.slice(0, 7);
 
-    const handleConstellationComplete = async (name: string, lines: ConstellationLine[]) => {
-      // 判定用に現在の点群を保存（保存前に取得）
-      const userPoints = entriesToUse.map(e => e.starPosition);
+  const handleConstellationComplete = async (name: string, lines: ConstellationLine[]) => {
+    const userPoints = entriesToUse.map(e => e.starPosition);
 
-      // 星座判定を実行
-      const result = findBestMatch(userPoints, 0.1);
-      const matchedId = result?.constellationId;
+    // 星座判定を実行
+    const result = findBestMatch(userPoints, 0.1);
+    const matchedId = result?.constellationId;
 
-      // DBに星座を保存（線データと判定結果も含む）
-      const entryIds = entriesToUse.map(e => e.id!);
-      await createConstellation(name, entryIds, lines, matchedId);
+    // DBに星座を保存
+    const entryIds = entriesToUse.map(e => e.id!);
+    await createConstellation(name, entryIds, lines, matchedId);
 
-      if (result) {
-        // 新しい星座のインデックス（現在のconstellations.length）に紐付け
-        const newConstellationIndex = constellations.length;
-        setMatchResults(prev => new Map(prev).set(newConstellationIndex, result));
-        console.log(`星座判定結果: ${result.constellationName} (${(result.similarity * 100).toFixed(1)}%)`);
-      }
+    if (result) {
+      const newConstellationIndex = constellations.length;
+      setMatchResults(prev => new Map(prev).set(newConstellationIndex, result));
+    }
 
-      // データを再読み込みしてホームへ
-      await loadData();
-      setView('home');
-    };
-
-    return (
-      <ConstellationCreator
-        entries={entriesToUse}
-        onComplete={handleConstellationComplete}
-        onCancel={() => setView('home')}
-        width={CANVAS_CONSTANTS.CONSTELLATION_WIDTH}
-        height={CANVAS_CONSTANTS.CONSTELLATION_HEIGHT}
-      />
-    );
+    // データを再読み込みしてホームへ
+    await loadData();
+    setView('home');
   };
+
+  const canvasWidth = CANVAS_CONSTANTS.CONSTELLATION_WIDTH;
+  const canvasHeight = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT;
+
+  return (
+    <ConstellationCreator
+      entries={entriesToUse} // 修正：targetEntries から entriesToUse へ
+      width={canvasWidth}
+      height={canvasHeight}
+      onComplete={handleConstellationComplete}
+      onCancel={() => setView('home')} // 修正：setIsCreatorOpen(false) から setView('home') へ
+    />
+  );
+};
 
   // ============================================
   // メインレンダリング（3層構造）
