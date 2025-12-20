@@ -163,7 +163,7 @@ body {
 }
 
 .constellation-dots .dot.active {
-  background: rgba(200, 210, 240, 0.8);
+  background: rgba(200, 210, 240, 0.5);
 }
 
 /* 下部アクション */

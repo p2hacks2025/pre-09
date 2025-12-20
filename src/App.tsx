@@ -72,8 +72,8 @@ function App() {
 
   // Note: entryById was removed as it was unused
 
-  // 星座の総数（未割り当てエントリも1グループとしてカウント）
-  const totalConstellationGroups = constellations.length + (unassignedEntries.length > 0 ? 1 : 0);
+  // 星座の総数（未割り当てエントリも1グループとしてカウント、ただし星が0個なら表示しない）
+  const totalConstellationGroups = entries.length === 0 ? 0 : constellations.length + (unassignedEntries.length > 0 ? 1 : 0);
 
   // 現在のカメラオフセットを計算（星座を画面中央に配置）
   // 星座の中心を画面中央に合わせる: 画面幅の半分 - 星座の中心位置
@@ -289,8 +289,13 @@ function App() {
     });
     setMatchResults(restoredMatchResults);
 
-    // リロード時は作成中の星座（未割り当てエントリのグループ）から表示開始
-    setCurrentConstellationIndex(allConstellations.length);
+    // リロード時の初期インデックスを決定
+    // 未割り当てエントリがあれば作成中の星座グループを表示
+    // なければ最後の完成した星座を表示（星座がなければ0）
+    const initialIndex = unassigned.length > 0
+      ? allConstellations.length
+      : Math.max(0, allConstellations.length - 1);
+    setCurrentConstellationIndex(initialIndex);
   }, []);
 
   //星座アニメーション完了時のハンドラー
@@ -582,37 +587,30 @@ function App() {
     // 7件のエントリを使って星座作成
     const entriesToUse = unassignedEntries.slice(0, 7);
 
-    const handleConstellationComplete = async (name: string, lines: ConstellationLine[]) => {
-      const userPoints = entriesToUse.map(e => e.starPosition);
-
-      // 星座判定を実行
-      const result = findBestMatch(userPoints, 0.1);
-      const matchedId = result?.constellationId;
+    const handleConstellationComplete = async (name: string, lines: ConstellationLine[], matchResult: MatchResult | null) => {
+      const matchedId = matchResult?.constellationId;
 
       // DBに星座を保存
       const entryIds = entriesToUse.map(e => e.id!);
       await createConstellation(name, entryIds, lines, matchedId);
 
-      if (result) {
+      if (matchResult) {
         const newConstellationIndex = constellations.length;
-        setMatchResults(prev => new Map(prev).set(newConstellationIndex, result));
+        setMatchResults(prev => new Map(prev).set(newConstellationIndex, matchResult));
       }
 
       // データを再読み込みしてホームへ
       await loadData();
+      // 新しく作成した星座を表示（loadData後のconstellations.lengthは更新済みなので-1）
+      setCurrentConstellationIndex(constellations.length);
       setView('home');
     };
 
-    const canvasWidth = CANVAS_CONSTANTS.CONSTELLATION_WIDTH;
-    const canvasHeight = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT;
-
     return (
       <ConstellationCreator
-        entries={entriesToUse} // 修正：targetEntries から entriesToUse へ
-        width={canvasWidth}
-        height={canvasHeight}
+        entries={entriesToUse}
         onComplete={handleConstellationComplete}
-        onCancel={() => setView('home')} // 修正：setIsCreatorOpen(false) から setView('home') へ
+        onCancel={() => setView('home')}
       />
     );
   };
