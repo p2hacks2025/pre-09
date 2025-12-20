@@ -10,7 +10,8 @@ interface ConstellationCreatorProps {
 }
 
 // アニメーションフェーズの定義
-type Phase = 'initial' | 'fadeout' | 'suspense' | 'reveal' | 'svg-fadein' | 'naming';
+// reveal を廃止し、"この星座は…" の後に結果テキストと SVG を同時フェードインさせる
+type Phase = 'initial' | 'fadeout' | 'suspense' | 'svg-fadein' | 'naming';
 
 // 順番に星をつなぐシンプルな線生成
 function generateDateOrderLines(entries: DiaryEntry[]): ConstellationLine[] {
@@ -54,20 +55,15 @@ export function ConstellationCreator({
       setTimeout(() => {
         setPhase('suspense');
 
-        // 「この星座は……」表示後 → 判定実行 & reveal
+        // 「この星座は……」表示後 → 判定実行 & テキスト+SVGを同時フェードイン
         setTimeout(() => {
           performMatch();
-          setPhase('reveal');
+          setPhase('svg-fadein');
 
-          // 結果表示後 → SVGフェードイン
+          // SVGフェードイン後 → 名前入力（少し長めの余韻）
           setTimeout(() => {
-            setPhase('svg-fadein');
-
-            // SVG表示後 → 名前入力
-            setTimeout(() => {
-              setPhase('naming');
-            }, 2000);
-          }, 1500);
+            setPhase('naming');
+          }, 2400);
         }, 1500);
       }, 800);
     }, 100);
@@ -88,6 +84,8 @@ export function ConstellationCreator({
   // フェーズに応じたUIをレンダリング（透明オーバーレイ）
   // initialフェーズ以降は暗いオーバーレイを維持
   const showDarkOverlay = phase !== 'initial';
+  const resultName = matchResult?.constellationName || '不思議な星座';
+  const showResult = phase === 'svg-fadein' || phase === 'naming';
 
   return (
     <div className="constellation-creator-overlay">
@@ -103,25 +101,16 @@ export function ConstellationCreator({
         </div>
       )}
 
-      {/* 結果発表：「○○座！」 */}
-      {phase === 'reveal' && (
-        <div className="reveal-overlay">
-          <p className="constellation-result">
-            {matchResult?.constellationName || '不思議な星座'}！
-          </p>
-        </div>
-      )}
-
-      {/* SVGフェードイン */}
-      {phase === 'svg-fadein' && (
+      {/* 結果発表：「○○座！」 ＋ SVG 同時フェードイン */}
+      {showResult && (
         <>
           <div className="reveal-overlay">
             <p className="constellation-result">
-              {matchResult?.constellationName || '不思議な星座'}！
+              {resultName}！
             </p>
           </div>
           {matchResult && (
-            <div className="svg-reveal-container">
+            <div className={`svg-reveal-container ${phase === 'naming' ? 'visible' : ''}`}>
               <img
                 src={matchResult.svgPath}
                 alt={matchResult.constellationName}
@@ -135,22 +124,13 @@ export function ConstellationCreator({
       {/* 名前入力フェーズ */}
       {phase === 'naming' && (
         <>
-          {matchResult && (
-            <div className="svg-reveal-container visible">
-              <img
-                src={matchResult.svgPath}
-                alt={matchResult.constellationName}
-                className="constellation-svg-reveal"
-              />
-            </div>
-          )}
           <div className="naming-overlay">
             <div className="naming-card">
               <p className="naming-hint">あなたの星座に名前をつけましょう</p>
               <input
                 type="text"
                 className="constellation-name-input"
-                placeholder="星座の名前..."
+                placeholder={`${resultName}...`}
                 value={constellationName}
                 onChange={(e) => setConstellationName(e.target.value)}
                 maxLength={20}
