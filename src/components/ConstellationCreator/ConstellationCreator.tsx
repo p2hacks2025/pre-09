@@ -1,22 +1,21 @@
-import { useMemo, useState } from 'react';
-import type p5 from 'p5';
-import { useP5, type Sketch } from '../../hooks/useP5';
-import type { Star, ConstellationLine, DiaryEntry } from '../../types';
-import { CANVAS_CONSTANTS } from '../../types';
+import { useState, useEffect, useCallback } from 'react';
+import type { ConstellationLine, DiaryEntry } from '../../types';
+import { findBestMatch, type MatchResult } from '../../lib/constellationMatcher';
 import './ConstellationCreator.css';
 
 interface ConstellationCreatorProps {
   entries: DiaryEntry[];
-  onComplete: (name: string, lines: ConstellationLine[]) => void;
+  onComplete: (name: string, lines: ConstellationLine[], matchResult: MatchResult | null) => void;
   onCancel: () => void;
-  width?: number;
-  height?: number;
 }
 
+// アニメーションフェーズの定義
+type Phase = 'initial' | 'fadeout' | 'suspense' | 'reveal' | 'svg-fadein' | 'naming';
+
 // 順番に星をつなぐシンプルな線生成
-function generateDateOrderLines(stars: Star[]): ConstellationLine[] {
+function generateDateOrderLines(entries: DiaryEntry[]): ConstellationLine[] {
   const lines: ConstellationLine[] = [];
-  for (let i = 0; i < stars.length - 1; i++) {
+  for (let i = 0; i < entries.length - 1; i++) {
     lines.push({
       fromIndex: i,
       toIndex: i + 1,
@@ -29,104 +28,152 @@ export function ConstellationCreator({
   entries,
   onComplete,
   onCancel,
-  width = CANVAS_CONSTANTS.CONSTELLATION_WIDTH,
-  height = CANVAS_CONSTANTS.CONSTELLATION_HEIGHT,
 }: ConstellationCreatorProps) {
+  // アニメーションフェーズ管理
+  const [phase, setPhase] = useState<Phase>('initial');
+  const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
   const [constellationName, setConstellationName] = useState('');
 
-  const stars: Star[] = useMemo(() => {
-  return entries.map((entry) => ({
-    entryId: entry.id!,
-    // App.tsx の背景キャンバスと全く同じ計算式を使う
-    x: entry.starPosition.x * CANVAS_CONSTANTS.STAR_AREA_WIDTH + CANVAS_CONSTANTS.PADDING_X,
-    y: entry.starPosition.y * CANVAS_CONSTANTS.STAR_AREA_HEIGHT + CANVAS_CONSTANTS.PADDING_Y_TOP, // -80を消してAppと合わせる
-    brightness: 200,
-    size: 10,
-  }));
+  const lines = generateDateOrderLines(entries);
+
+  // 星座判定を実行
+  const performMatch = useCallback(() => {
+    const userPoints = entries.map(e => e.starPosition);
+    const result = findBestMatch(userPoints, 0.1);
+    setMatchResult(result);
+    return result;
   }, [entries]);
 
-  const lines = useMemo(() => generateDateOrderLines(stars), [stars]);
+  // ボタン押下時に即座にアニメーション開始
+  useEffect(() => {
+    // 初期フェーズから自動的にフェードアウト開始
+    const timer = setTimeout(() => {
+      setPhase('fadeout');
 
-  // p5 スケッチの定義
-  const sketch: Sketch = useMemo(() => {
-    return (p: p5) => {
-      
-      const drawLines = () => {
-        // --- アニメーションさせず一気に描く ---
-        p.stroke(120, 170, 255);
-        p.strokeWeight(2);
-        for (const line of lines) {
-          const from = stars[line.fromIndex];
-          const to = stars[line.toIndex];
-          if (from && to) {
-            p.line(from.x, from.y, to.x, to.y);
-          }
-        }
-      };
+      // フェードアウト完了後 → suspense
+      setTimeout(() => {
+        setPhase('suspense');
 
-      p.setup = () => {
-        p.createCanvas(width, height);
-        const dpr = Math.min(2, window.devicePixelRatio);
-        p.pixelDensity(dpr);
-      };
+        // 「この星座は……」表示後 → 判定実行 & reveal
+        setTimeout(() => {
+          performMatch();
+          setPhase('reveal');
 
-      p.draw = () => {
-        p.background('#0b1021');
-        
-        // 線の描画
-        drawLines();
+          // 結果表示後 → SVGフェードイン
+          setTimeout(() => {
+            setPhase('svg-fadein');
 
-        // 星本体の描画
-        p.noStroke();
-        p.fill(255);
-        for (const star of stars) {
-          p.ellipse(star.x, star.y, Math.max(6, star.size));
-        }
-      };
-    };
-  }, [width, height, lines, stars]);
+            // SVG表示後 → 名前入力
+            setTimeout(() => {
+              setPhase('naming');
+            }, 2000);
+          }, 1500);
+        }, 1500);
+      }, 800);
+    }, 100);
 
-  const containerRef = useP5(sketch);
+    return () => clearTimeout(timer);
+  }, [performMatch]);
+
+  // 完了ハンドラー
   const handleComplete = () => {
     const name = constellationName.trim();
     if (!name) {
       alert('星座の名前を入力してください');
       return;
     }
-    onComplete(name, lines);
+    onComplete(name, lines, matchResult);
   };
 
+  // フェーズに応じたUIをレンダリング（透明オーバーレイ）
+  // initialフェーズ以降は暗いオーバーレイを維持
+  const showDarkOverlay = phase !== 'initial';
+
   return (
-    <div className="constellation-creator">
-      <header className="creator-header">
-        <button className="btn-back" onClick={onCancel}>
+    <div className="constellation-creator-overlay">
+      {/* 暗いオーバーレイ（initial以外で表示） */}
+      {showDarkOverlay && (
+        <div className="dark-overlay" />
+      )}
+
+      {/* 溜め演出：「この星座は……」 */}
+      {phase === 'suspense' && (
+        <div className="reveal-overlay">
+          <p className="suspense-text">この星座は……</p>
+        </div>
+      )}
+
+      {/* 結果発表：「○○座！」 */}
+      {phase === 'reveal' && (
+        <div className="reveal-overlay">
+          <p className="constellation-result">
+            {matchResult?.constellationName || '不思議な星座'}！
+          </p>
+        </div>
+      )}
+
+      {/* SVGフェードイン */}
+      {phase === 'svg-fadein' && (
+        <>
+          <div className="reveal-overlay">
+            <p className="constellation-result">
+              {matchResult?.constellationName || '不思議な星座'}！
+            </p>
+          </div>
+          {matchResult && (
+            <div className="svg-reveal-container">
+              <img
+                src={matchResult.svgPath}
+                alt={matchResult.constellationName}
+                className="constellation-svg-reveal"
+              />
+            </div>
+          )}
+        </>
+      )}
+
+      {/* 名前入力フェーズ */}
+      {phase === 'naming' && (
+        <>
+          {matchResult && (
+            <div className="svg-reveal-container visible">
+              <img
+                src={matchResult.svgPath}
+                alt={matchResult.constellationName}
+                className="constellation-svg-reveal"
+              />
+            </div>
+          )}
+          <div className="naming-overlay">
+            <div className="naming-card">
+              <p className="naming-hint">あなたの星座に名前をつけましょう</p>
+              <input
+                type="text"
+                className="constellation-name-input"
+                placeholder="星座の名前..."
+                value={constellationName}
+                onChange={(e) => setConstellationName(e.target.value)}
+                maxLength={20}
+                autoFocus
+              />
+              <button
+                className="btn btn-primary"
+                onClick={handleComplete}
+                disabled={!constellationName.trim()}
+              >
+                この名前で決定
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* キャンセルボタン（常に左上に表示） */}
+      {phase === 'initial' && (
+        <button className="cancel-btn" onClick={onCancel}>
           ← 戻る
         </button>
-        <h1>星座を作成</h1>
-      </header>
-
-      <div className="creator-canvas-container">
-        <div ref={containerRef} className="creator-canvas" />
-      </div>
-
-      <div className="creator-controls">
-        <p className="creator-hint">星座に名前をつけましょう</p>
-        <input
-          type="text"
-          className="constellation-name-input"
-          placeholder="星座の名前..."
-          value={constellationName}
-          onChange={(e) => setConstellationName(e.target.value)}
-          maxLength={20}
-        />
-        <button
-          className="btn btn-primary"
-          onClick={handleComplete}
-          disabled={!constellationName.trim()}
-        >
-          この星座で決定
-        </button>
-      </div>
+      )}
     </div>
   );
 }
